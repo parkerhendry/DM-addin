@@ -20,6 +20,8 @@ exports.handler = async (event, context) => {
       throw new Error('DeviceType, Product and ID parameters are required');
     }
 
+    console.log('Fetching device params for', deviceType, product, id);
+
     const response = await fetch(`${DM_API_BASE}/v1/${deviceType}/Get?product=${product}&id=${id}`, {
       method: 'GET',
       headers: {
@@ -27,6 +29,8 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json'
       }
     });
+
+    console.log('Response status:', response.status, response.statusText);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);

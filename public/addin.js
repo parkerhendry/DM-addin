@@ -12,6 +12,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
     // Digital Matter API configuration
     const DM_API_BASE = 'https://api.oemserver.com/v1';
     const DM_API_TOKEN = 'hUpEcwaVfthLqxMOP8MirN.tFoswRLau5YFaBRTicD_vUt2TKc8_LefBgLK7J1a02w7.1';
+    const NETLIFY_BASE_URL = 'https://sunny-lolly-97f343.netlify.app/';
+    const DEVICE_TYPES = ['Yabby34G', 'YabbyEdge', 'Oyster2', 'Oyster34G'];
     
     // Global variables for device management
     let digitalMatterDevices = [];
@@ -90,11 +92,10 @@ geotab.addin.digitalMatterDeviceManager = function () {
      * Make a Digital Matter API call
      */
     async function makeDigitalMatterCall(endpoint, method = 'GET', body = null) {
-        const url = `${DM_API_BASE}${endpoint}`;
-        const options = {
+        let url;
+        let options = {
             method: method,
             headers: {
-                'Authorization': `Bearer ${DM_API_TOKEN}`,
                 'Content-Type': 'application/json'
             }
         };
@@ -103,10 +104,34 @@ geotab.addin.digitalMatterDeviceManager = function () {
             options.body = JSON.stringify(body);
         }
         
+        // Route to appropriate Netlify function
+        if (endpoint === '/TrackingDevice/GetDeviceList') {
+            url = `${NETLIFY_BASE_URL}/api/get-device-list`;
+        } else if (endpoint.includes('/TrackingDevice/GetGeotabSerial')) {
+            const params = new URLSearchParams(endpoint.split('?')[1]);
+            url = `${NETLIFY_BASE_URL}/api/get-geotab-serial?${params}`;
+        } else if (endpoint.includes('/TrackingDevice/GetBatteryPercentageAndDeviceCounters')) {
+            const params = new URLSearchParams(endpoint.split('?')[1]);
+            url = `${NETLIFY_BASE_URL}/api/get-battery-data?${params}`;
+        } else if (endpoint.includes('/TrackingDevice/SetDeviceParameters/')) {
+            const productId = endpoint.split('/').pop();
+            url = `${NETLIFY_BASE_URL}/api/set-device-params?productId=${productId}`;
+        } else if (endpoint.includes('/v1/') && endpoint.includes('/Get?')) {
+            // Handle device parameter requests
+            const parts = endpoint.split('?');
+            const deviceType = parts[0].split('/v1/')[1].split('/Get')[0];
+            const params = new URLSearchParams(parts[1]);
+            params.append('deviceType', deviceType);
+            url = `${NETLIFY_BASE_URL}/api/get-device-params?${params}`;
+        } else {
+            throw new Error(`Unsupported endpoint: ${endpoint}`);
+        }
+        
         const response = await fetch(url, options);
         
         if (!response.ok) {
-            throw new Error(`DM API Error: ${response.status} ${response.statusText}`);
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || `HTTP Error: ${response.status} ${response.statusText}`);
         }
         
         return await response.json();
@@ -228,18 +253,19 @@ geotab.addin.digitalMatterDeviceManager = function () {
         showAlert('Getting system parameters for devices...', 'info');
         
         for (const device of digitalMatterDevices) {
-            for (const endpoint of DEVICE_TYPE_ENDPOINTS) {
+            for (const deviceType of DEVICE_TYPES) {
                 try {
-                    const fullEndpoint = `${endpoint}?product=${device.productId}&id=${device.serialNumber}`;
-                    const response = await makeDigitalMatterCall(fullEndpoint);
+                    const response = await makeDigitalMatterCall(
+                        `/v1/${deviceType}/Get?product=${device.productId}&id=${device.serialNumber}`
+                    );
                     
                     if (response && response.SystemParameters) {
                         device.systemParameters = response.SystemParameters;
-                        device.deviceType = endpoint.split('/')[2]; // Extract device type from endpoint
-                        break; // Found the correct endpoint, stop trying others
+                        device.deviceType = deviceType;
+                        break; // Found the correct device type, stop trying others
                     }
                 } catch (error) {
-                    // Continue to next endpoint
+                    // Continue to next device type
                     continue;
                 }
             }

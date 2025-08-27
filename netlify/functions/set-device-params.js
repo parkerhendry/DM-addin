@@ -2,17 +2,6 @@ exports.handler = async (event, context) => {
   const DM_API_BASE = 'https://api.oemserver.com/v1';
   const DM_API_TOKEN = 'hUpEcwaVfthLqxMOP8MirN.tFoswRLau5YFaBRTicD_vUt2TKc8_LefBgLK7J1a02w7.1';
 
-  if (event.httpMethod === 'OPTIONS') {
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS'
-    }
-  };
-}
-
   // Handle CORS preflight request
   if (event.httpMethod === 'OPTIONS') {
     return {

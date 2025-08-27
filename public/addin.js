@@ -86,6 +86,17 @@ geotab.addin.digitalMatterDeviceManager = function () {
         }
     };
 
+    function getCurrentGeotabDatabase() { 
+
+        api.getSession(function(session) { 
+            console.log('session:', session); 
+            if (session && session.database) { 
+                return session.database; 
+            } 
+        }); 
+ 
+    }
+
     /**
      * Make a Geotab API call
      */

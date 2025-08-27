@@ -178,6 +178,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 const response = await makeDigitalMatterCall(
                     `/TrackingDevice/GetGeotabSerial?product=${device.productId}&id=${device.serialNumber}`
                 );
+
+                console.log('Geotab serial response for device', device.serialNumber, response);
                 
                 if (response && response.GeotabSerial) {
                     device.geotabSerial = response.GeotabSerial;

@@ -22,7 +22,7 @@ exports.handler = async (event, context) => {
 
     console.log('Fetching device params for', deviceType, product, id);
 
-    const response = await fetch(`${DM_API_BASE}/v1/${deviceType}/Get?product=${product}&id=${id}`, {
+    const response = await fetch(`${DM_API_BASE}/${deviceType}/Get?product=${product}&id=${id}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${DM_API_TOKEN}`,

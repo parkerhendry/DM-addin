@@ -29,6 +29,22 @@ geotab.addin.digitalMatterDeviceManager = function () {
         '/v1/Oyster34G/Get'
     ];
 
+    const CLIENT_MAPPING = {
+        "regendiesel": "Regen Diesel Repair",
+        "decimacorp": "Decima Corp",
+        "pavlovmedia": "Pavlov Media",
+        "rnwbl": "RNWBL",
+        "aitransport": "Spartan Carrier Group",
+        "dataone": "Data One",
+        "pumpman": "Pumpman Phoenix",
+        "erling_sales_and_service": "Erling Sales and Service",
+        "cressydoor": "Cressy Door",
+        "bigcityleasing": "BigCity Leasing",
+        "foothillsconstruction": "Foothills Construction",
+        "reynolds_fence": "Reynolds Fence",
+        "traxxisdemo": "Traxxis Demo"
+    };
+
     // Parameter descriptions from the provided paste
     const PARAMETER_DESCRIPTIONS = {
         '2000': {
@@ -143,19 +159,39 @@ geotab.addin.digitalMatterDeviceManager = function () {
     async function loadDigitalMatterDevices() {
         try {
             showAlert('Loading Digital Matter devices...', 'info');
+            
+            // Get current Geotab database
+            const currentDatabase = await getCurrentGeotabDatabase();
+            if (!currentDatabase) {
+                throw new Error('Could not determine current Geotab database');
+            }
+            
+            const currentClient = CLIENT_MAPPING[currentDatabase.toLowerCase()];
+            if (!currentClient) {
+                throw new Error(`No client mapping found for database: ${currentDatabase}`);
+            }
+            
+            showAlert(`Filtering for client: ${currentClient}`, 'info');
+            
             const response = await makeDigitalMatterCall('/TrackingDevice/GetDeviceList');
             
             if (response && response.Devices) {
-                digitalMatterDevices = response.Devices.map(device => ({
+                // Filter devices by client field
+                const clientDevices = response.Devices.filter(device => 
+                    device.Client && device.Client === currentClient
+                );
+                
+                digitalMatterDevices = clientDevices.map(device => ({
                     serialNumber: device.SerialNumber,
                     productId: device.ProductId,
+                    client: device.Client,
                     geotabSerial: null,
                     batteryPercentage: null,
                     systemParameters: null,
                     deviceType: null
                 }));
                 
-                showAlert(`Found ${digitalMatterDevices.length} Digital Matter devices`, 'success');
+                showAlert(`Found ${digitalMatterDevices.length} Digital Matter devices for ${currentClient}`, 'success');
                 return digitalMatterDevices;
             }
             
@@ -171,7 +207,11 @@ geotab.addin.digitalMatterDeviceManager = function () {
      * Get Geotab serial for Digital Matter devices
      */
     async function enrichWithGeotabSerials() {
-        showAlert('Getting Geotab serials for Digital Matter devices...', 'info');
+        if (digitalMatterDevices.length === 0) {
+            return;
+        }
+        
+        showAlert('Getting Geotab serials for filtered Digital Matter devices...', 'info');
         
         for (const device of digitalMatterDevices) {
             try {
@@ -190,36 +230,34 @@ geotab.addin.digitalMatterDeviceManager = function () {
         }
         
         const devicesWithGeotab = digitalMatterDevices.filter(d => d.geotabSerial);
-        showAlert(`Matched ${devicesWithGeotab.length} devices with Geotab serials`, 'info');
+        showAlert(`Matched ${devicesWithGeotab.length} devices with Geotab serials`, 'success');
     }
 
     /**
      * Load Geotab devices and filter Digital Matter devices
      */
-    async function loadAndFilterGeotabDevices() {
+    async function loadAndEnrichWithGeotabData() {
         try {
-            showAlert('Loading Geotab devices...', 'info');
+            showAlert('Loading Geotab device information...', 'info');
             geotabDevices = await makeGeotabCall("Get", "Device");
             
-            // Filter Digital Matter devices that exist in Geotab
-            const filteredDMDevices = digitalMatterDevices.filter(dmDevice => {
-                if (!dmDevice.geotabSerial) return false;
-                
-                const geotabDevice = geotabDevices.find(gtDevice => 
-                    gtDevice.serialNumber === dmDevice.geotabSerial
-                );
-                
-                if (geotabDevice) {
-                    dmDevice.geotabName = geotabDevice.name;
-                    dmDevice.geotabId = geotabDevice.id;
-                    return true;
+            // Enrich Digital Matter devices with Geotab names and IDs
+            let enrichedCount = 0;
+            digitalMatterDevices.forEach(dmDevice => {
+                if (dmDevice.geotabSerial) {
+                    const geotabDevice = geotabDevices.find(gtDevice => 
+                        gtDevice.serialNumber === dmDevice.geotabSerial
+                    );
+                    
+                    if (geotabDevice) {
+                        dmDevice.geotabName = geotabDevice.name;
+                        dmDevice.geotabId = geotabDevice.id;
+                        enrichedCount++;
+                    }
                 }
-                
-                return false;
             });
             
-            digitalMatterDevices = filteredDMDevices;
-            showAlert(`Found ${digitalMatterDevices.length} Digital Matter devices in your Geotab database`, 'success');
+            showAlert(`Enriched ${enrichedCount} devices with Geotab information`, 'success');
             
         } catch (error) {
             console.error('Error loading Geotab devices:', error);
@@ -282,7 +320,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
      */
     async function loadAllDeviceData() {
         try {
-            // Step 1: Load Digital Matter devices
+            // Step 1: Load Digital Matter devices (now filtered by client)
             await loadDigitalMatterDevices();
             
             if (digitalMatterDevices.length === 0) {
@@ -290,16 +328,21 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 return;
             }
             
-            // Step 2: Get Geotab serials
+            // Step 2: Get Geotab serials (only for filtered devices)
             await enrichWithGeotabSerials();
             
-            // Step 3: Load and filter Geotab devices
-            await loadAndFilterGeotabDevices();
+            // Step 3: Load Geotab devices and enrich (renamed function)
+            await loadAndEnrichWithGeotabData();
             
-            if (digitalMatterDevices.length === 0) {
+            // Filter out devices without Geotab matches
+            const devicesWithGeotabMatch = digitalMatterDevices.filter(d => d.geotabName);
+            if (devicesWithGeotabMatch.length === 0) {
                 showEmptyState();
                 return;
             }
+            
+            digitalMatterDevices = devicesWithGeotabMatch;
+            showAlert(`Final count: ${digitalMatterDevices.length} matched devices`, 'success');
             
             // Step 4: Get battery data
             await enrichWithBatteryData();

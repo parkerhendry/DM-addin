@@ -32,7 +32,7 @@ exports.handler = async (event, context) => {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.text();
 
     return {
       statusCode: 200,
@@ -41,7 +41,7 @@ exports.handler = async (event, context) => {
         'Access-Control-Allow-Headers': 'Content-Type',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ GeotabSerial: data.replace(/"/g, '') })
     };
   } catch (error) {
     return {

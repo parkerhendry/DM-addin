@@ -799,6 +799,14 @@ geotab.addin.digitalMatterDeviceManager = function () {
         }
     };
 
+    window.hideDeviceParameters = function(serialNumber) {
+        const paramsElement = document.getElementById(`params-${serialNumber}`);
+        if (paramsElement) {
+            paramsElement.remove();
+        }
+        currentEditingDevice = null;
+    };
+
     /**
      * Save device parameters - Enhanced version with better feedback
      */

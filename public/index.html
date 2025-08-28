@@ -21,29 +21,29 @@
         <div class="header-section">
             <div class="container-fluid">
                 <div class="row align-items-center">
+                    <div class="col-auto">
+                        <img src="https://traxxisgps.com/wp-content/uploads/elementor/thumbs/Traxxis-refresh-logo_horizontal-min-1-qjgvd5cr9kxu5eay6trn10pbylz31ardqnqdluuew0.webp" 
+                            alt="Company Logo" class="company-logo">
+                    </div>
                     <div class="col">
-                        <h1 class="header-title">
-                            <img src="https://traxxisgps.com/wp-content/uploads/elementor/thumbs/Traxxis-refresh-logo_horizontal-min-1-qjgvd5cr9kxu5eay6trn10pbylz31ardqnqdluuew0.webp" 
-                                 alt="Company Logo" class="company-logo">
-                            Digital Matter Device Manager
-                        </h1>
-                        <p class="header-subtitle">Manage and configure your Digital Matter tracking devices</p>
+                        <div class="header-content">
+                            <h1 class="header-title">Digital Matter Device Manager</h1>
+                            <p class="header-subtitle">Manage and configure your Digital Matter tracking devices</p>
+                        </div>
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-outline-light" onclick="refreshDevices()">
-                            <i class="fas fa-sync-alt me-2"></i>Refresh Devices
+                        <button class="btn btn-header-action" onclick="refreshDevices()">
+                            <i class="fas fa-sync-alt"></i>
+                            <span class="btn-text">Refresh</span>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Toast Container for notifications -->
-        <div class="toast-container" id="toastContainer"></div>
-
-        <!-- Keep the existing alert container but hide it -->
+        <!-- Alert Container -->
         <div class="container-fluid">
-            <div id="alertContainer" style="display: none;"></div>
+            <div id="alertContainer"></div>
         </div>
 
         <!-- Controls Section -->

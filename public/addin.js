@@ -697,7 +697,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 });
             });
             
-            showInlineSuccess(device.serialNumber, 'Parameters updated successfully!');
+            showParamStatus(device.serialNumber, 'Parameters updated successfully!', 'success');
             
             // Remove changed class from inputs and disable save button
             changedInputs.forEach(input => input.classList.remove('changed'));
@@ -708,25 +708,19 @@ geotab.addin.digitalMatterDeviceManager = function () {
             
         } catch (error) {
             console.error('Error saving parameters:', error);
-            showAlert('Error saving parameters: ' + error.message, 'danger');
+            showParamStatus(device.serialNumber, 'Error saving parameters: ' + error.message, 'error');
         }
     };
 
     /**
-     * Show toast notifications (replaces the old alert system)
+     * Show status bar notification (replaces toast system)
      */
     function showAlert(message, type = 'info') {
-        const toastContainer = document.getElementById('toastContainer');
-        if (!toastContainer) return;
-        
-        // Remove existing toasts to prevent stacking
-        const existingToasts = toastContainer.querySelectorAll('.toast-notification');
-        existingToasts.forEach(toast => {
-            toast.classList.add('hiding');
-            setTimeout(() => toast.remove(), 300);
-        });
-        
-        const toastId = 'toast-' + Date.now();
+        // Remove existing status bar if present
+        const existingBar = document.querySelector('.status-bar');
+        if (existingBar) {
+            hideStatusBar();
+        }
         
         const iconMap = {
             'success': 'check-circle',
@@ -735,80 +729,87 @@ geotab.addin.digitalMatterDeviceManager = function () {
             'info': 'info-circle'
         };
         
-        const titleMap = {
-            'success': 'Success',
-            'danger': 'Error',
-            'warning': 'Warning',
-            'info': 'Information'
-        };
-        
-        const toastHtml = `
-            <div class="toast-notification toast-${type}" id="${toastId}">
-                <div class="toast-header">
-                    <i class="fas fa-${iconMap[type]} me-2"></i>
-                    <strong class="me-auto">${titleMap[type]}</strong>
-                    <button type="button" class="btn-close toast-close" onclick="closeToast('${toastId}')">
-                        <i class="fas fa-times"></i>
-                    </button>
+        const statusBarHtml = `
+            <div class="status-bar status-${type}" id="statusBar">
+                <div class="status-bar-content">
+                    <i class="fas fa-${iconMap[type]}"></i>
+                    <span>${message}</span>
                 </div>
-                <div class="toast-body">
-                    ${message}
-                </div>
+                <button class="status-bar-close" onclick="hideStatusBar()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
         `;
         
-        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        document.body.insertAdjacentHTML('afterbegin', statusBarHtml);
+        document.body.classList.add('status-bar-active');
         
-        // Auto-remove after 4 seconds for non-error messages
+        // Show with animation
+        setTimeout(() => {
+            const statusBar = document.getElementById('statusBar');
+            if (statusBar) {
+                statusBar.classList.add('show');
+            }
+        }, 10);
+        
+        // Auto-hide after 4 seconds for non-error messages
         if (type !== 'danger') {
             setTimeout(() => {
-                closeToast(toastId);
+                hideStatusBar();
             }, 4000);
         }
     }
 
     /**
-     * Close a specific toast
+     * Hide status bar
      */
-    window.closeToast = function(toastId) {
-        const toast = document.getElementById(toastId);
-        if (toast) {
-            toast.classList.add('hiding');
-            setTimeout(() => toast.remove(), 300);
+    window.hideStatusBar = function() {
+        const statusBar = document.querySelector('.status-bar');
+        if (statusBar) {
+            statusBar.classList.remove('show');
+            setTimeout(() => {
+                statusBar.remove();
+                document.body.classList.remove('status-bar-active');
+            }, 300);
         }
     };
 
     /**
-     * Show inline success message for parameter saves
+     * Show inline parameter status message
      */
-    function showInlineSuccess(deviceSerial, message) {
+    function showParamStatus(deviceSerial, message, type = 'success') {
         const paramsContainer = document.getElementById(`params-${deviceSerial}`);
         if (!paramsContainer) return;
         
-        // Remove existing inline messages
-        const existingMessages = paramsContainer.querySelectorAll('.inline-success-message');
+        // Remove existing status messages
+        const existingMessages = paramsContainer.querySelectorAll('.param-status-message');
         existingMessages.forEach(msg => msg.remove());
         
-        const successHtml = `
-            <div class="inline-success-message">
-                <i class="fas fa-check-circle"></i>
+        const iconMap = {
+            'success': 'check-circle',
+            'error': 'exclamation-triangle'
+        };
+        
+        const statusHtml = `
+            <div class="param-status-message param-${type}">
+                <i class="fas fa-${iconMap[type]}"></i>
                 <span>${message}</span>
             </div>
         `;
         
-        // Insert after the parameters content, before the actions
+        // Insert before the actions section
         const actionsDiv = paramsContainer.querySelector('.parameters-actions');
         if (actionsDiv) {
-            actionsDiv.insertAdjacentHTML('beforebegin', successHtml);
+            actionsDiv.insertAdjacentHTML('beforebegin', statusHtml);
             
-            // Remove after 3 seconds
+            // Auto-remove after 4 seconds
             setTimeout(() => {
-                const successMsg = paramsContainer.querySelector('.inline-success-message');
-                if (successMsg) {
-                    successMsg.style.animation = 'fadeOut 0.3s ease-in forwards';
-                    setTimeout(() => successMsg.remove(), 300);
+                const statusMsg = paramsContainer.querySelector('.param-status-message');
+                if (statusMsg) {
+                    statusMsg.style.animation = 'slideInUp 0.3s ease reverse';
+                    setTimeout(() => statusMsg.remove(), 300);
                 }
-            }, 3000);
+            }, 4000);
         }
     }
 

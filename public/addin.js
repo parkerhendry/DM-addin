@@ -11,7 +11,6 @@ geotab.addin.digitalMatterDeviceManager = function () {
     
     // Digital Matter API configuration
     const NETLIFY_BASE_URL = 'https://sunny-lolly-97f343.netlify.app/';
-    const DEVICE_TYPES = ['Yabby34G', 'YabbyEdge', 'Oyster2', 'Oyster34G'];
     
     // Global variables for device management
     let digitalMatterDevices = [];
@@ -37,43 +36,129 @@ geotab.addin.digitalMatterDeviceManager = function () {
 
     // Parameter descriptions from the provided paste
     const PARAMETER_DESCRIPTIONS = {
-        '2000': {
-            name: 'Basic Tracking',
-            description: 'These parameters determine the tracking mode and tracking intervals of your device.',
-            params: {
-                'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
-                'bInTripUploadMinSec': 'In Trip Upload Period (s) - Time between uploads in a trip (seconds)',
-                'bInTripLogMinSec': 'In Trip Logging Period (s) - Time between GPS fixes in a trip (seconds)',
-                'bGpsTimeoutMinSec': 'GPS Fix Timeout (s) - Max time to wait for a GPS fix (seconds)',
-                'fGpsPowerMode': 'GPS Mode - Choose between prioritising GPS performance or power usage [0=Low Power,1=Performance]',
-                'bTrackingMode': 'Tracking Mode - Mode of location tracking [0=GPS Movement Trips,1=Jostle Trips,2=Periodic Update]'
+        // Yabby34G and Oyster34G parameters
+        'Yabby34G': {
+            '2000': {
+                name: 'Basic Tracking',
+                description: 'These parameters determine the tracking mode and tracking intervals of your device.',
+                params: {
+                    'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
+                    'bInTripUploadMinSec': 'In Trip Upload Period (s) - Time between uploads in a trip (seconds)',
+                    'bInTripLogMinSec': 'In Trip Logging Period (s) - Time between GPS fixes in a trip (seconds)',
+                    'bGpsTimeoutMinSec': 'GPS Fix Timeout (s) - Max time to wait for a GPS fix (seconds)',
+                    'fGpsPowerMode': 'GPS Mode - Choose between prioritising GPS performance or power usage [0=Low Power,1=Performance]',
+                    'bTrackingMode': 'Tracking Mode - Mode of location tracking [0=GPS Movement Trips,1=Jostle Trips,2=Periodic Update]'
+                }
+            },
+            '2100': {
+                name: 'Advanced Tracking',
+                description: 'Configure upload behavior - whether at trip start, during movement, at trip end, based on accelerometer activity, and more.',
+                params: {
+                    'fUploadOnStart': 'Upload On Trip Start - Schedule an upload as soon as a trip starts [1=Yes,0=No]',
+                    'fUploadDuring': 'Upload During Trip - Schedule uploads while in trip (enables Tracking->In Trip Upload Period) [1=Yes,0=No]',
+                    'fUploadOnEnd': 'Upload On Trip End - Schedule an upload as soon as a trip ends [1=Yes,0=No]',
+                    'fUploadOnJostle': 'Upload On Jostle - Schedule an upload shortly after accelerometer stops firing [1=Yes,0=No]',
+                    'fAvoidGpsWander': 'Suppress GPS Wander - Filter out small scale GPS movement (noise) [1=Yes,0=No]',
+                    'fCellTowerFallback': 'Cell Tower Fallback - Attempt to locate the device using cell towers when a GPS fix attempt fails [1=Yes,0=No]',
+                    'bOnceOffUploadDelayMinutes': 'Once-off Upload Delay (min) - Uploads once on trip start after this delay. Set to 0 to disable. Requires fw v1.8+',
+                    'bGpsFixMultiplier': 'GPS Fix Multiplier - Attempt GPS fix every this heartbeats (0 - 255). 1 will attempt a fix every heartbeat (default).'
+                }
             }
         },
-        '2050': {
-            name: 'Alternative Basic Tracking',
-            description: 'Used when after hours or in configured geofences NOTE: This is an advanced section.',
-            params: {
-                'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
-                'bInTripUploadMinSec': 'In Trip Upload Period (s) - Time between uploads in a trip (seconds)',
-                'bInTripLogMinSec': 'In Trip Logging Period (s) - Time between GPS fixes in a trip (seconds)',
-                'bGpsTimeoutMinSec': 'GPS Fix Timeout (s) - Max time to wait for a GPS fix (seconds)',
-                'fGpsPowerMode': 'GPS Mode - Choose between prioritising GPS performance or power usage [0=Low Power,1=Performance]'
+        'Oyster34G': {
+            '2000': {
+                name: 'Basic Tracking',
+                description: 'These parameters determine the tracking mode and tracking intervals of your device.',
+                params: {
+                    'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
+                    'bInTripUploadMinSec': 'In Trip Upload Period (s) - Time between uploads in a trip (seconds)',
+                    'bInTripLogMinSec': 'In Trip Logging Period (s) - Time between GPS fixes in a trip (seconds)',
+                    'bGpsTimeoutMinSec': 'GPS Fix Timeout (s) - Max time to wait for a GPS fix (seconds)',
+                    'fGpsPowerMode': 'GPS Mode - Choose between prioritising GPS performance or power usage [0=Low Power,1=Performance]',
+                    'bTrackingMode': 'Tracking Mode - Mode of location tracking [0=GPS Movement Trips,1=Jostle Trips,2=Periodic Update]'
+                }
+            },
+            '2100': {
+                name: 'Advanced Tracking',
+                description: 'Configure upload behavior - whether at trip start, during movement, at trip end, based on accelerometer activity, and more.',
+                params: {
+                    'fUploadOnStart': 'Upload On Trip Start - Schedule an upload as soon as a trip starts [1=Yes,0=No]',
+                    'fUploadDuring': 'Upload During Trip - Schedule uploads while in trip (enables Tracking->In Trip Upload Period) [1=Yes,0=No]',
+                    'fUploadOnEnd': 'Upload On Trip End - Schedule an upload as soon as a trip ends [1=Yes,0=No]',
+                    'fUploadOnJostle': 'Upload On Jostle - Schedule an upload shortly after accelerometer stops firing [1=Yes,0=No]',
+                    'fAvoidGpsWander': 'Suppress GPS Wander - Filter out small scale GPS movement (noise) [1=Yes,0=No]',
+                    'fCellTowerFallback': 'Cell Tower Fallback - Attempt to locate the device using cell towers when a GPS fix attempt fails [1=Yes,0=No]',
+                    'bOnceOffUploadDelayMinutes': 'Once-off Upload Delay (min) - Uploads once on trip start after this delay. Set to 0 to disable. Requires fw v1.8+',
+                    'bGpsFixMultiplier': 'GPS Fix Multiplier - Attempt GPS fix every this heartbeats (0 - 255). 1 will attempt a fix every heartbeat (default).'
+                }
             }
         },
-        '2100': {
-            name: 'Advanced Tracking',
-            description: 'Configure upload behavior - whether at trip start, during movement, at trip end, based on accelerometer activity, and more.',
-            params: {
-                'fUploadOnStart': 'Upload On Trip Start - Schedule an upload as soon as a trip starts [1=Yes,0=No]',
-                'fUploadDuring': 'Upload During Trip - Schedule uploads while in trip (enables Tracking->In Trip Upload Period) [1=Yes,0=No]',
-                'fUploadOnEnd': 'Upload On Trip End - Schedule an upload as soon as a trip ends [1=Yes,0=No]',
-                'fUploadOnJostle': 'Upload On Jostle - Schedule an upload shortly after accelerometer stops firing [1=Yes,0=No]',
-                'fAvoidGpsWander': 'Suppress GPS Wander - Filter out small scale GPS movement (noise) [1=Yes,0=No]',
-                'fCellTowerFallback': 'Cell Tower Fallback - Attempt to locate the device using cell towers when a GPS fix attempt fails [1=Yes,0=No]',
-                'bOnceOffUploadDelayMinutes': 'Once-off Upload Delay (min) - Uploads once on trip start after this delay. Set to 0 to disable. Requires fw v1.8+',
-                'bGpsFixMultiplier': 'GPS Fix Multiplier - Attempt GPS fix every this heartbeats (0 - 255). 1 will attempt a fix every heartbeat (default).'
+        // Oyster2 parameters
+        'Oyster2': {
+            '2000': {
+                name: 'Basic Tracking',
+                description: 'These parameters determine the tracking mode and tracking intervals of your device.',
+                params: {
+                    'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
+                    'bInTripUploadMinSec': 'In Trip Upload Period (s) - Time between uploads in a trip (seconds)',
+                    'bInTripLogMinSec': 'In Trip Logging Period (s) - Time between GPS fixes in a trip (seconds)',
+                    'bGpsTimeoutMinSec': 'GPS Fix Timeout (s) - Max time to wait for a GPS fix (seconds)'
+                }
+            },
+            '2100': {
+                name: 'Advanced Tracking',
+                description: 'Configure upload behavior - whether at trip start, during movement, at trip end, based on accelerometer activity, and more.',
+                params: {
+                    'fPeriodicOnly': 'Periodic Tracking Only - Disable movement tracking - heartbeats only [1=Yes,0=No]',
+                    'fJostleTrips': 'Jostle Based Tracking - Use the accelerometer to delimit trips, instead of GPS movement [1=Yes,0=No]',
+                    'fUploadOnStart': 'Upload On Trip Start - Schedule an upload as soon as a trip starts [1=Yes,0=No]',
+                    'fUploadDuring': 'Upload During Trip - Schedule uploads while in trip (enables Tracking->In Trip Upload Period) [1=Yes,0=No]',
+                    'fUploadOnEnd': 'Upload On Trip End - Schedule an upload as soon as a trip ends [1=Yes,0=No]',
+                    'fUploadOnJostle': 'Upload On Jostle - Schedule an upload shortly after accelerometer stops firing [1=Yes,0=No]',
+                    'fAvoidGpsWander': 'Suppress GPS Wander - Filter out small scale GPS movement (noise) [1=Yes,0=No]',
+                    'fNoGpsFreshen': 'Optimise For Low Signal - Intelligently manage GPS to improve low signal fix times [0=Yes,1=No]',
+                    'fCellTowerFallback': 'Cell Tower Fallback - Attempt to locate the device using cell towers when a GPS fix attempt fails [1=Yes,0=No]',
+                    'bOnceOffUploadDelayMinutes': 'Once-off Upload Delay - Uploads once on trip start after this delay (min). Set to 0 to disable'
+                }
+            }
+        },
+        // YabbyEdge parameters
+        'YabbyEdge': {
+            '2000': {
+                name: 'Basic Tracking',
+                description: 'These parameters determine the tracking mode and tracking intervals of your device.',
+                params: {
+                    'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
+                    'bMoveLogMinSec': 'Movement Logging Period (seconds) - Time between location scans when moving (seconds)',
+                    'bMoveUploadMinSec': 'Movement Upload Period (seconds) - Time between uploads when movement is detected (seconds)',
+                    'bTrackingMode': 'Tracking Mode - Mode of location tracking [0=Movement (accelerometer) based,1=Periodic Update]'
+                }
+            },
+            '2400': {
+                name: 'Movement Detection',
+                description: 'Detect trips based on accelerometer movement. These parameters only apply in Movement based tracking mode.',
+                params: {
+                    'bDigital': 'Digital Input - Digital Input to set when movement is detected [255=None,0=Emulated Ignition (0),1=Input 1,2=Input 2,3=Input 3,4=Input 4,5=Input 5,6=Input 6,7=Input 7,8=Input 8,9=Input 9]',
+                    'bMoveEndTimeSec_10': 'Movement End Time (s) - Period of inactivity before assuming the device has stopped moving',
+                    'fUploadOnStart': 'Upload On Movement Detection - Schedule an upload as soon as movement is detected [1=Yes,0=No]',
+                    'fUploadOnEnd': 'Upload On Movement End - Schedule an upload as soon as the asset has stopped moving [1=Yes,0=No]',
+                    'fDisableMoveLogs': 'Log During Movement - Perform regular location scans while moving [0=Yes,1=No]',
+                    'fEnableMoveUploads': 'Upload During Movement - Schedule uploads while moving [1=Yes,0=No]',
+                    'fDisableWakeFilter': 'Disable Wake Filter - Disables trip start filtering - trips start even for momentary jostles [1=Yes,0=No]',
+                    'fDisableLogFilter': 'Disable Scan Filter - Disables trip location scan filtering [1=Yes,0=No]',
+                    'bOnceOffUploadDelayMinutes': 'Once-Off Upload Delay (min) - Schedule a delayed upload after movement is detected. Set to 0 to disable',
+                    'bGpsFixMultiplier': 'Location Scan Multiplier - Attempt location scan on every this number of heartbeats (0 - 255). 1 will attempt a scan every heartbeat (default)'
+                }
             }
         }
+    };
+
+    // Add this constant after the existing CLIENT_MAPPING constant:
+    const PRODUCT_ID_TO_DEVICE_TYPE = {
+        '87': 'Oyster34G',
+        '77': 'Oyster2', 
+        '85': 'YabbyEdge',
+        '97': 'Yabby34G'
     };
 
     function getCurrentGeotabDatabase() {
@@ -296,21 +381,25 @@ geotab.addin.digitalMatterDeviceManager = function () {
         showAlert('Getting system parameters for devices...', 'info');
         
         for (const device of digitalMatterDevices) {
-            for (const deviceType of DEVICE_TYPES) {
-                try {
-                    const response = await makeDigitalMatterCall(
-                        `/v1/${deviceType}/Get?product=${device.productId}&id=${device.serialNumber}`
-                    );
-                    
-                    if (response && response.SystemParameters) {
-                        device.systemParameters = response.SystemParameters;
-                        device.deviceType = deviceType;
-                        break; // Found the correct device type, stop trying others
-                    }
-                } catch (error) {
-                    // Continue to next device type
-                    continue;
+            // Determine device type from product ID
+            const deviceType = PRODUCT_ID_TO_DEVICE_TYPE[device.productId];
+            
+            if (!deviceType) {
+                console.warn(`Unknown product ID ${device.productId} for device ${device.serialNumber}`);
+                continue;
+            }
+            
+            try {
+                const response = await makeDigitalMatterCall(
+                    `/v1/${deviceType}/Get?product=${device.productId}&id=${device.serialNumber}`
+                );
+                
+                if (response && response.SystemParameters) {
+                    device.systemParameters = response.SystemParameters;
+                    device.deviceType = deviceType;
                 }
+            } catch (error) {
+                console.warn(`Could not get system parameters for device ${device.serialNumber}:`, error);
             }
         }
         
@@ -521,113 +610,6 @@ geotab.addin.digitalMatterDeviceManager = function () {
     /**
      * Generate dropdown options based on parameter type
      */
-    function generateDropdownOptions(paramKey, currentValue) {
-        let options = [];
-        
-        switch (paramKey) {
-            case 'fGpsPowerMode':
-                options = [
-                    { value: '0', label: '0 - Low Power' },
-                    { value: '1', label: '1 - Performance' }
-                ];
-                break;
-                
-            case 'bTrackingMode':
-                options = [
-                    { value: '0', label: '0 - GPS Movement Trips' },
-                    { value: '1', label: '1 - Jostle Trips' },
-                    { value: '2', label: '2 - Periodic Update' }
-                ];
-                break;
-                
-            case 'fUploadOnStart':
-            case 'fUploadDuring':
-            case 'fUploadOnEnd':
-            case 'fUploadOnJostle':
-            case 'fAvoidGpsWander':
-            case 'fCellTowerFallback':
-                options = [
-                    { value: '0', label: '0 - No' },
-                    { value: '1', label: '1 - Yes' }
-                ];
-                break;
-                
-            case 'bPeriodicUploadHrMin':
-                // 2 hours to 24 hours, even numbers only (in minutes)
-                for (let hours = 2; hours <= 24; hours += 2) {
-                    const minutes = hours * 60;
-                    options.push({ 
-                        value: minutes.toString(), 
-                        label: `${minutes} min (${hours} hours)` 
-                    });
-                }
-                break;
-                
-            case 'bInTripUploadMinSec':
-            case 'bInTripLogMinSec':
-                // 1 minute to 60 minutes (in seconds)
-                for (let minutes = 1; minutes <= 60; minutes++) {
-                    const seconds = minutes * 60;
-                    options.push({ 
-                        value: seconds.toString(), 
-                        label: `${seconds} sec (${minutes} min)` 
-                    });
-                }
-                break;
-                
-            case 'bGpsTimeoutMinSec':
-                // 5 seconds to 2 minutes (120 seconds)
-                const timeoutOptions = [5, 10, 15, 20, 30, 45, 60, 75, 90, 105, 120];
-                timeoutOptions.forEach(seconds => {
-                    if (seconds >= 60) {
-                        const minutes = Math.floor(seconds / 60);
-                        const remainingSeconds = seconds % 60;
-                        const label = remainingSeconds > 0 ? 
-                            `${seconds} sec (${minutes}m ${remainingSeconds}s)` : 
-                            `${seconds} sec (${minutes} min)`;
-                        options.push({ value: seconds.toString(), label });
-                    } else {
-                        options.push({ 
-                            value: seconds.toString(), 
-                            label: `${seconds} sec` 
-                        });
-                    }
-                });
-                break;
-                
-            case 'bOnceOffUploadDelayMinutes':
-                // 0 to 20 minutes
-                for (let minutes = 0; minutes <= 20; minutes++) {
-                    const label = minutes === 0 ? '0 min (Disabled)' : `${minutes} min`;
-                    options.push({ 
-                        value: minutes.toString(), 
-                        label 
-                    });
-                }
-                break;
-                
-            case 'bGpsFixMultiplier':
-                // 0 to 10 (reasonable range for multiplier)
-                for (let i = 0; i <= 10; i++) {
-                    const label = i === 0 ? '0 (Disabled)' : i === 1 ? '1 (Default)' : i.toString();
-                    options.push({ 
-                        value: i.toString(), 
-                        label 
-                    });
-                }
-                break;
-                
-            default:
-                // For any parameter not specifically handled, return null to use text input
-                return null;
-        }
-        
-        return options;
-    }
-
-    /**
-     * Show parameters inline instead of in a modal - Enhanced version with dropdowns
-     */
     function showParametersInline(device) {
         // Find the device card
         const deviceCards = document.querySelectorAll('.device-card');
@@ -641,6 +623,13 @@ geotab.addin.digitalMatterDeviceManager = function () {
         });
         
         if (!targetCard) return;
+        
+        // Get parameter descriptions for this device type
+        const deviceTypeParams = PARAMETER_DESCRIPTIONS[device.deviceType];
+        if (!deviceTypeParams) {
+            showAlert(`No parameter definitions found for device type: ${device.deviceType}`, 'warning');
+            return;
+        }
         
         let parametersHtml = `
             <div id="params-${device.serialNumber}" class="device-parameters mt-3">
@@ -663,7 +652,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
         `;
         
         for (const [sectionId, sectionData] of Object.entries(device.systemParameters)) {
-            const sectionInfo = PARAMETER_DESCRIPTIONS[sectionId];
+            const sectionInfo = deviceTypeParams[sectionId];
             
             if (!sectionInfo) continue; // Skip unknown sections
             
@@ -686,7 +675,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 const paramDesc = descParts.join(' - ');
                 
                 // Check if this parameter should use a dropdown
-                const dropdownOptions = generateDropdownOptions(paramKey, paramValue);
+                const dropdownOptions = generateDropdownOptions(paramKey, paramValue, device.deviceType);
                 
                 if (dropdownOptions) {
                     // Generate dropdown
@@ -771,6 +760,181 @@ geotab.addin.digitalMatterDeviceManager = function () {
         if (paramsElement) {
             paramsElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+    }
+
+    // Replace the existing generateDropdownOptions function:
+    function generateDropdownOptions(paramKey, currentValue, deviceType) {
+        let options = [];
+        
+        switch (paramKey) {
+            case 'fGpsPowerMode':
+                options = [
+                    { value: '0', label: '0 - Low Power' },
+                    { value: '1', label: '1 - Performance' }
+                ];
+                break;
+                
+            case 'bTrackingMode':
+                if (deviceType === 'YabbyEdge') {
+                    options = [
+                        { value: '0', label: '0 - Movement (accelerometer) based' },
+                        { value: '1', label: '1 - Periodic Update' }
+                    ];
+                } else {
+                    options = [
+                        { value: '0', label: '0 - GPS Movement Trips' },
+                        { value: '1', label: '1 - Jostle Trips' },
+                        { value: '2', label: '2 - Periodic Update' }
+                    ];
+                }
+                break;
+                
+            // Yes/No parameters
+            case 'fUploadOnStart':
+            case 'fUploadDuring':
+            case 'fUploadOnEnd':
+            case 'fUploadOnJostle':
+            case 'fAvoidGpsWander':
+            case 'fCellTowerFallback':
+            case 'fPeriodicOnly':
+            case 'fJostleTrips':
+            case 'fEnableMoveUploads':
+            case 'fDisableWakeFilter':
+            case 'fDisableLogFilter':
+                options = [
+                    { value: '0', label: '0 - No' },
+                    { value: '1', label: '1 - Yes' }
+                ];
+                break;
+                
+            // Inverted Yes/No parameters (0=Yes, 1=No)
+            case 'fNoGpsFreshen':
+            case 'fDisableMoveLogs':
+                options = [
+                    { value: '0', label: '0 - Yes' },
+                    { value: '1', label: '1 - No' }
+                ];
+                break;
+                
+            case 'bDigital':
+                options = [
+                    { value: '255', label: '255 - None' },
+                    { value: '0', label: '0 - Emulated Ignition (0)' },
+                    { value: '1', label: '1 - Input 1' },
+                    { value: '2', label: '2 - Input 2' },
+                    { value: '3', label: '3 - Input 3' },
+                    { value: '4', label: '4 - Input 4' },
+                    { value: '5', label: '5 - Input 5' },
+                    { value: '6', label: '6 - Input 6' },
+                    { value: '7', label: '7 - Input 7' },
+                    { value: '8', label: '8 - Input 8' },
+                    { value: '9', label: '9 - Input 9' }
+                ];
+                break;
+                
+            case 'bPeriodicUploadHrMin':
+                // 2 hours to 24 hours, even numbers only (in minutes)
+                for (let hours = 2; hours <= 24; hours += 2) {
+                    const minutes = hours * 60;
+                    options.push({ 
+                        value: minutes.toString(), 
+                        label: `${minutes} min (${hours} hours)` 
+                    });
+                }
+                break;
+                
+            case 'bInTripUploadMinSec':
+            case 'bInTripLogMinSec':
+            case 'bMoveUploadMinSec':
+                // 1 minute to 60 minutes (in seconds)
+                for (let minutes = 1; minutes <= 60; minutes++) {
+                    const seconds = minutes * 60;
+                    options.push({ 
+                        value: seconds.toString(), 
+                        label: `${seconds} sec (${minutes} min)` 
+                    });
+                }
+                break;
+                
+            case 'bMoveLogMinSec':
+                // 30 seconds to 30 minutes (in seconds)
+                const moveLogOptions = [30, 60, 120, 180, 300, 600, 900, 1200, 1500, 1800];
+                moveLogOptions.forEach(seconds => {
+                    if (seconds >= 60) {
+                        const minutes = Math.floor(seconds / 60);
+                        const remainingSeconds = seconds % 60;
+                        const label = remainingSeconds > 0 ? 
+                            `${seconds} sec (${minutes}m ${remainingSeconds}s)` : 
+                            `${seconds} sec (${minutes} min)`;
+                        options.push({ value: seconds.toString(), label });
+                    } else {
+                        options.push({ 
+                            value: seconds.toString(), 
+                            label: `${seconds} sec` 
+                        });
+                    }
+                });
+                break;
+                
+            case 'bGpsTimeoutMinSec':
+                // 5 seconds to 2 minutes (120 seconds)
+                const timeoutOptions = [5, 10, 15, 20, 30, 45, 60, 75, 90, 105, 120];
+                timeoutOptions.forEach(seconds => {
+                    if (seconds >= 60) {
+                        const minutes = Math.floor(seconds / 60);
+                        const remainingSeconds = seconds % 60;
+                        const label = remainingSeconds > 0 ? 
+                            `${seconds} sec (${minutes}m ${remainingSeconds}s)` : 
+                            `${seconds} sec (${minutes} min)`;
+                        options.push({ value: seconds.toString(), label });
+                    } else {
+                        options.push({ 
+                            value: seconds.toString(), 
+                            label: `${seconds} sec` 
+                        });
+                    }
+                });
+                break;
+                
+            case 'bMoveEndTimeSec_10':
+                // 1 minute to 20 minutes (in seconds)
+                for (let minutes = 1; minutes <= 20; minutes++) {
+                    const seconds = minutes * 60;
+                    options.push({ 
+                        value: seconds.toString(), 
+                        label: `${seconds} sec (${minutes} min)` 
+                    });
+                }
+                break;
+                
+            case 'bOnceOffUploadDelayMinutes':
+                // 0 to 20 minutes
+                for (let minutes = 0; minutes <= 20; minutes++) {
+                    const label = minutes === 0 ? '0 min (Disabled)' : `${minutes} min`;
+                    options.push({ 
+                        value: minutes.toString(), 
+                        label 
+                    });
+                }
+                break;
+                
+            case 'bGpsFixMultiplier':
+                // 0 to 10 (reasonable range for multiplier)
+                for (let i = 0; i <= 10; i++) {
+                    const label = i === 0 ? '0 (Disabled)' : i === 1 ? '1 (Default)' : i.toString();
+                    options.push({ 
+                        value: i.toString(), 
+                        label 
+                    });
+                }
+                break;
+                
+            default:
+                // For any parameter not specifically handled, return null to use text input
+                return null;
+        }
+        
+        return options;
     }
 
     /**

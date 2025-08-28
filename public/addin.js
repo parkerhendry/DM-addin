@@ -86,15 +86,17 @@ geotab.addin.digitalMatterDeviceManager = function () {
         }
     };
 
-    function getCurrentGeotabDatabase() { 
-
-        api.getSession(function(session) { 
-            console.log('session:', session); 
-            if (session && session.database) { 
-                return session.database; 
-            } 
-        }); 
- 
+    function getCurrentGeotabDatabase() {
+        return new Promise((resolve, reject) => {
+            api.getSession(function(session) {
+                console.log('session:', session);
+                if (session && session.database) {
+                    resolve(session.database);
+                } else {
+                    reject(new Error('No database found in session'));
+                }
+            });
+        });
     }
 
     /**

@@ -697,7 +697,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 });
             });
             
-            showAlert('Device parameters updated successfully!', 'success');
+            showInlineSuccess(device.serialNumber, 'Parameters updated successfully!');
             
             // Remove changed class from inputs and disable save button
             changedInputs.forEach(input => input.classList.remove('changed'));
@@ -713,13 +713,20 @@ geotab.addin.digitalMatterDeviceManager = function () {
     };
 
     /**
-     * Show alert messages
+     * Show toast notifications (replaces the old alert system)
      */
     function showAlert(message, type = 'info') {
-        const alertContainer = document.getElementById('alertContainer');
-        if (!alertContainer) return;
+        const toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
         
-        const alertId = 'alert-' + Date.now();
+        // Remove existing toasts to prevent stacking
+        const existingToasts = toastContainer.querySelectorAll('.toast-notification');
+        existingToasts.forEach(toast => {
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 300);
+        });
+        
+        const toastId = 'toast-' + Date.now();
         
         const iconMap = {
             'success': 'check-circle',
@@ -728,24 +735,81 @@ geotab.addin.digitalMatterDeviceManager = function () {
             'info': 'info-circle'
         };
         
-        const alertHtml = `
-            <div class="alert alert-${type} alert-dismissible fade show" id="${alertId}" role="alert">
-                <i class="fas fa-${iconMap[type]} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        const titleMap = {
+            'success': 'Success',
+            'danger': 'Error',
+            'warning': 'Warning',
+            'info': 'Information'
+        };
+        
+        const toastHtml = `
+            <div class="toast-notification toast-${type}" id="${toastId}">
+                <div class="toast-header">
+                    <i class="fas fa-${iconMap[type]} me-2"></i>
+                    <strong class="me-auto">${titleMap[type]}</strong>
+                    <button type="button" class="btn-close toast-close" onclick="closeToast('${toastId}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
             </div>
         `;
         
-        alertContainer.insertAdjacentHTML('beforeend', alertHtml);
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
         
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            const alert = document.getElementById(alertId);
-            if (alert && typeof bootstrap !== 'undefined' && bootstrap.Alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }
-        }, 5000);
+        // Auto-remove after 4 seconds for non-error messages
+        if (type !== 'danger') {
+            setTimeout(() => {
+                closeToast(toastId);
+            }, 4000);
+        }
+    }
+
+    /**
+     * Close a specific toast
+     */
+    window.closeToast = function(toastId) {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 300);
+        }
+    };
+
+    /**
+     * Show inline success message for parameter saves
+     */
+    function showInlineSuccess(deviceSerial, message) {
+        const paramsContainer = document.getElementById(`params-${deviceSerial}`);
+        if (!paramsContainer) return;
+        
+        // Remove existing inline messages
+        const existingMessages = paramsContainer.querySelectorAll('.inline-success-message');
+        existingMessages.forEach(msg => msg.remove());
+        
+        const successHtml = `
+            <div class="inline-success-message">
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        // Insert after the parameters content, before the actions
+        const actionsDiv = paramsContainer.querySelector('.parameters-actions');
+        if (actionsDiv) {
+            actionsDiv.insertAdjacentHTML('beforebegin', successHtml);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                const successMsg = paramsContainer.querySelector('.inline-success-message');
+                if (successMsg) {
+                    successMsg.style.animation = 'fadeOut 0.3s ease-in forwards';
+                    setTimeout(() => successMsg.remove(), 300);
+                }
+            }, 3000);
+        }
     }
 
     /**

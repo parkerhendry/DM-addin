@@ -10,8 +10,6 @@ geotab.addin.digitalMatterDeviceManager = function () {
     let elAddin;
     
     // Digital Matter API configuration
-    const DM_API_BASE = 'https://api.oemserver.com/v1';
-    const DM_API_TOKEN = 'hUpEcwaVfthLqxMOP8MirN.tFoswRLau5YFaBRTicD_vUt2TKc8_LefBgLK7J1a02w7.1';
     const NETLIFY_BASE_URL = 'https://sunny-lolly-97f343.netlify.app/';
     const DEVICE_TYPES = ['Yabby34G', 'YabbyEdge', 'Oyster2', 'Oyster34G'];
     
@@ -20,14 +18,6 @@ geotab.addin.digitalMatterDeviceManager = function () {
     let geotabDevices = [];
     let filteredDevices = [];
     let currentEditingDevice = null;
-    
-    // Device type endpoints
-    const DEVICE_TYPE_ENDPOINTS = [
-        '/v1/Yabby34G/Get',
-        '/v1/YabbyEdge/Get',
-        '/v1/Oyster2/Get',
-        '/v1/Oyster34G/Get'
-    ];
 
     const CLIENT_MAPPING = {
         "regendiesel": "Regen Diesel Repair",

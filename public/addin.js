@@ -519,7 +519,114 @@ geotab.addin.digitalMatterDeviceManager = function () {
     };
 
     /**
-     * Show parameters inline instead of in a modal
+     * Generate dropdown options based on parameter type
+     */
+    function generateDropdownOptions(paramKey, currentValue) {
+        let options = [];
+        
+        switch (paramKey) {
+            case 'fGpsPowerMode':
+                options = [
+                    { value: '0', label: '0 - Low Power' },
+                    { value: '1', label: '1 - Performance' }
+                ];
+                break;
+                
+            case 'bTrackingMode':
+                options = [
+                    { value: '0', label: '0 - GPS Movement Trips' },
+                    { value: '1', label: '1 - Jostle Trips' },
+                    { value: '2', label: '2 - Periodic Update' }
+                ];
+                break;
+                
+            case 'fUploadOnStart':
+            case 'fUploadDuring':
+            case 'fUploadOnEnd':
+            case 'fUploadOnJostle':
+            case 'fAvoidGpsWander':
+            case 'fCellTowerFallback':
+                options = [
+                    { value: '0', label: '0 - No' },
+                    { value: '1', label: '1 - Yes' }
+                ];
+                break;
+                
+            case 'bPeriodicUploadHrMin':
+                // 2 hours to 24 hours, even numbers only (in minutes)
+                for (let hours = 2; hours <= 24; hours += 2) {
+                    const minutes = hours * 60;
+                    options.push({ 
+                        value: minutes.toString(), 
+                        label: `${minutes} min (${hours} hours)` 
+                    });
+                }
+                break;
+                
+            case 'bInTripUploadMinSec':
+            case 'bInTripLogMinSec':
+                // 1 minute to 60 minutes (in seconds)
+                for (let minutes = 1; minutes <= 60; minutes++) {
+                    const seconds = minutes * 60;
+                    options.push({ 
+                        value: seconds.toString(), 
+                        label: `${seconds} sec (${minutes} min)` 
+                    });
+                }
+                break;
+                
+            case 'bGpsTimeoutMinSec':
+                // 5 seconds to 2 minutes (120 seconds)
+                const timeoutOptions = [5, 10, 15, 20, 30, 45, 60, 75, 90, 105, 120];
+                timeoutOptions.forEach(seconds => {
+                    if (seconds >= 60) {
+                        const minutes = Math.floor(seconds / 60);
+                        const remainingSeconds = seconds % 60;
+                        const label = remainingSeconds > 0 ? 
+                            `${seconds} sec (${minutes}m ${remainingSeconds}s)` : 
+                            `${seconds} sec (${minutes} min)`;
+                        options.push({ value: seconds.toString(), label });
+                    } else {
+                        options.push({ 
+                            value: seconds.toString(), 
+                            label: `${seconds} sec` 
+                        });
+                    }
+                });
+                break;
+                
+            case 'bOnceOffUploadDelayMinutes':
+                // 0 to 20 minutes
+                for (let minutes = 0; minutes <= 20; minutes++) {
+                    const label = minutes === 0 ? '0 min (Disabled)' : `${minutes} min`;
+                    options.push({ 
+                        value: minutes.toString(), 
+                        label 
+                    });
+                }
+                break;
+                
+            case 'bGpsFixMultiplier':
+                // 0 to 10 (reasonable range for multiplier)
+                for (let i = 0; i <= 10; i++) {
+                    const label = i === 0 ? '0 (Disabled)' : i === 1 ? '1 (Default)' : i.toString();
+                    options.push({ 
+                        value: i.toString(), 
+                        label 
+                    });
+                }
+                break;
+                
+            default:
+                // For any parameter not specifically handled, return null to use text input
+                return null;
+        }
+        
+        return options;
+    }
+
+    /**
+     * Show parameters inline instead of in a modal - Enhanced version with dropdowns
      */
     function showParametersInline(device) {
         // Find the device card
@@ -537,12 +644,22 @@ geotab.addin.digitalMatterDeviceManager = function () {
         
         let parametersHtml = `
             <div id="params-${device.serialNumber}" class="device-parameters mt-3">
-                <div class="parameters-header">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-cog me-2"></i>Parameters - ${device.geotabName || device.serialNumber}
-                    </h5>
-                </div>
-                <div class="parameters-content">
+                <div class="parameters-container">
+                    <div class="parameters-header mb-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h5 class="text-primary mb-1">
+                                    <i class="fas fa-cog me-2"></i>Device Parameters
+                                </h5>
+                                <p class="text-muted mb-0">${device.geotabName || device.serialNumber} - ${device.deviceType || 'Unknown Type'}</p>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="hideDeviceParameters('${device.serialNumber}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="parameters-content">
         `;
         
         for (const [sectionId, sectionData] of Object.entries(device.systemParameters)) {
@@ -553,11 +670,11 @@ geotab.addin.digitalMatterDeviceManager = function () {
             parametersHtml += `
                 <div class="parameter-section mb-4">
                     <div class="section-header mb-3">
-                        <h6 class="text-primary mb-1">${sectionInfo.name}</h6>
-                        <p class="text-muted small mb-0">${sectionInfo.description}</p>
+                        <h6 class="section-title">${sectionInfo.name}</h6>
+                        <p class="section-description">${sectionInfo.description}</p>
                     </div>
                     
-                    <div class="row">
+                    <div class="parameters-grid">
             `;
             
             for (const [paramKey, paramValue] of Object.entries(sectionData)) {
@@ -565,20 +682,51 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 
                 if (!paramDescription) continue; // Skip unknown parameters
                 
-                parametersHtml += `
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <label class="form-label small fw-semibold">${paramDescription.split(' - ')[0]}</label>
-                        <input type="text" 
-                            class="form-control form-control-sm" 
-                            value="${paramValue}"
-                            data-section="${sectionId}"
-                            data-param="${paramKey}"
-                            data-device="${device.serialNumber}"
-                            onchange="markParameterAsChanged(this)"
-                            title="${paramDescription}">
-                        <div class="form-text small">${paramDescription.split(' - ').slice(1).join(' - ')}</div>
-                    </div>
-                `;
+                const [paramName, ...descParts] = paramDescription.split(' - ');
+                const paramDesc = descParts.join(' - ');
+                
+                // Check if this parameter should use a dropdown
+                const dropdownOptions = generateDropdownOptions(paramKey, paramValue);
+                
+                if (dropdownOptions) {
+                    // Generate dropdown
+                    let optionsHtml = '';
+                    dropdownOptions.forEach(option => {
+                        const selected = option.value === paramValue.toString() ? 'selected' : '';
+                        optionsHtml += `<option value="${option.value}" ${selected}>${option.label}</option>`;
+                    });
+                    
+                    parametersHtml += `
+                        <div class="parameter-field">
+                            <label class="parameter-label">${paramName}</label>
+                            <select class="form-select parameter-input" 
+                                    data-section="${sectionId}"
+                                    data-param="${paramKey}"
+                                    data-device="${device.serialNumber}"
+                                    onchange="markParameterAsChanged(this)"
+                                    title="${paramDescription}">
+                                ${optionsHtml}
+                            </select>
+                            <div class="parameter-description">${paramDesc}</div>
+                        </div>
+                    `;
+                } else {
+                    // Use text input for parameters without specific dropdown options
+                    parametersHtml += `
+                        <div class="parameter-field">
+                            <label class="parameter-label">${paramName}</label>
+                            <input type="text" 
+                                class="form-control parameter-input" 
+                                value="${paramValue}"
+                                data-section="${sectionId}"
+                                data-param="${paramKey}"
+                                data-device="${device.serialNumber}"
+                                onchange="markParameterAsChanged(this)"
+                                title="${paramDescription}">
+                            <div class="parameter-description">${paramDesc}</div>
+                        </div>
+                    `;
+                }
             }
             
             parametersHtml += `
@@ -588,18 +736,29 @@ geotab.addin.digitalMatterDeviceManager = function () {
         }
         
         parametersHtml += `
-                </div>
-                <div class="parameters-actions mt-4 pt-3 border-top">
-                    <button class="btn btn-primary me-2" 
-                            id="save-${device.serialNumber}" 
-                            onclick="saveDeviceParameters('${device.serialNumber}')" 
-                            disabled>
-                        <i class="fas fa-save me-2"></i>Save Changes
-                    </button>
-                    <button class="btn btn-outline-secondary" 
-                            onclick="hideDeviceParameters('${device.serialNumber}')">
-                        <i class="fas fa-times me-2"></i>Close
-                    </button>
+                    </div>
+                    
+                    <div class="parameters-actions">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="action-buttons">
+                                <button class="btn btn-primary me-2" 
+                                        id="save-${device.serialNumber}" 
+                                        onclick="saveDeviceParameters('${device.serialNumber}')" 
+                                        disabled>
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                                <button class="btn btn-outline-secondary" 
+                                        onclick="hideDeviceParameters('${device.serialNumber}')">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </button>
+                            </div>
+                            <div class="changes-indicator" id="changes-${device.serialNumber}" style="display: none;">
+                                <small class="text-warning">
+                                    <i class="fas fa-exclamation-circle me-1"></i>Unsaved changes
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -615,30 +774,33 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
-     * Hide device parameters
-     */
-    window.hideDeviceParameters = function(serialNumber) {
-        const paramsElement = document.getElementById(`params-${serialNumber}`);
-        if (paramsElement) {
-            paramsElement.remove();
-        }
-        currentEditingDevice = null;
-    };
-
-    /**
-     * Mark parameter as changed - modified to work with specific device
+     * Mark parameter as changed - Enhanced version with visual feedback
      */
     window.markParameterAsChanged = function(input) {
         input.classList.add('changed');
         const deviceSerial = input.dataset.device;
+        
+        // Enable save button
         const saveButton = document.getElementById(`save-${deviceSerial}`);
         if (saveButton) {
             saveButton.disabled = false;
         }
+        
+        // Show changes indicator
+        const changesIndicator = document.getElementById(`changes-${deviceSerial}`);
+        if (changesIndicator) {
+            changesIndicator.style.display = 'block';
+        }
+        
+        // Add visual feedback to the parameter field
+        const parameterField = input.closest('.parameter-field');
+        if (parameterField) {
+            parameterField.classList.add('field-changed');
+        }
     };
 
     /**
-     * Save device parameters - modified to work with specific device
+     * Save device parameters - Enhanced version with better feedback
      */
     window.saveDeviceParameters = async function(serialNumber = null) {
         // If no serialNumber provided, use currentEditingDevice (for backward compatibility)
@@ -651,7 +813,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
         const paramsContainer = document.getElementById(`params-${device.serialNumber}`);
         if (!paramsContainer) return;
         
-        const changedInputs = paramsContainer.querySelectorAll('input.changed');
+        const changedInputs = paramsContainer.querySelectorAll('.parameter-input.changed');
         if (changedInputs.length === 0) {
             showAlert('No changes detected', 'info');
             return;
@@ -659,6 +821,13 @@ geotab.addin.digitalMatterDeviceManager = function () {
         
         try {
             showAlert('Saving device parameters...', 'info');
+            
+            // Disable save button during save
+            const saveButton = document.getElementById(`save-${device.serialNumber}`);
+            if (saveButton) {
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+            }
             
             // Build the parameters object with only changed values
             const updatedParams = {};
@@ -699,16 +868,37 @@ geotab.addin.digitalMatterDeviceManager = function () {
             
             showParamStatus(device.serialNumber, 'Parameters updated successfully!', 'success');
             
-            // Remove changed class from inputs and disable save button
-            changedInputs.forEach(input => input.classList.remove('changed'));
-            const saveButton = document.getElementById(`save-${device.serialNumber}`);
+            // Remove changed classes and visual indicators
+            changedInputs.forEach(input => {
+                input.classList.remove('changed');
+                const parameterField = input.closest('.parameter-field');
+                if (parameterField) {
+                    parameterField.classList.remove('field-changed');
+                }
+            });
+            
+            // Hide changes indicator
+            const changesIndicator = document.getElementById(`changes-${device.serialNumber}`);
+            if (changesIndicator) {
+                changesIndicator.style.display = 'none';
+            }
+            
+            // Restore save button
             if (saveButton) {
                 saveButton.disabled = true;
+                saveButton.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
             }
             
         } catch (error) {
             console.error('Error saving parameters:', error);
             showParamStatus(device.serialNumber, 'Error saving parameters: ' + error.message, 'error');
+            
+            // Restore save button on error
+            const saveButton = document.getElementById(`save-${device.serialNumber}`);
+            if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+            }
         }
     };
 

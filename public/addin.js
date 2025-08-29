@@ -42,9 +42,9 @@ geotab.addin.digitalMatterDeviceManager = function () {
         name: 'Basic Tracking',
         description: 'Set how often your device records location data and uploads it.',
         params: {
-            'bPeriodicUploadHrMin': 'Heartbeat Interval - How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
-            'bInTripUploadMinSec': 'Upload While Moving - How often the device sends updates during a trip (seconds). ⚠️ More frequent uploads use more battery.',
-            'bInTripLogMinSec': 'GPS Fix Frequency - How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.',
+            'bPeriodicUploadHrMin': 'Heartbeat Interval - How often the device checks in when idle (minutes).\n ⚠️ Shorter times use more battery.',
+            'bInTripUploadMinSec': 'Upload While Moving - How often the device sends updates during a trip (seconds).\n ⚠️ More frequent uploads use more battery.',
+            'bInTripLogMinSec': 'GPS Fix Frequency - How often the device records a GPS point during a trip (seconds).\n ⚠️ More frequent logging gives more detail but reduces battery life.',
             'fGpsPowerMode': 'GPS Power Mode - Choose whether to save battery or prioritize GPS accuracy.',
             'bTrackingMode': 'Tracking Method - Select how the device detects and tracks trips.'
         }

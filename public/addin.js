@@ -782,7 +782,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
             case 'bTrackingMode':
                 if (deviceType === 'YabbyEdge') {
                     options = [
-                        { value: '0', label: '0 - Movement (accelerometer) based' },
+                        { value: '0', label: '0 - Movement based' },
                         { value: '1', label: '1 - Periodic Update' }
                     ];
                 } else {

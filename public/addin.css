@@ -806,3 +806,38 @@ body.status-bar-active .header-section {
         opacity: 0.5;
     }
 }
+
+/* Parameter disclaimer styling */
+.parameter-disclaimer {
+    display: inline-block;
+    background-color: #fff3cd; /* Light yellow background */
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-left: 4px;
+    font-size: 0.875em; /* Slightly smaller text */
+    color: #856404; /* Darker yellow/brown text */
+    font-weight: 500;
+}
+
+/* Alternative darker theme version */
+.parameter-disclaimer.dark-theme {
+    background-color: #2d1b0e;
+    border-color: #664d03;
+    color: #ffda6a;
+}
+
+/* Make disclaimers more prominent on hover */
+.parameter-disclaimer:hover {
+    background-color: #ffeaa7;
+    border-color: #ffd93d;
+}
+
+/* Optional: Make disclaimers stack nicely on smaller screens */
+@media (max-width: 768px) {
+    .parameter-disclaimer {
+        display: block;
+        margin: 4px 0 0 0;
+        width: fit-content;
+    }
+}

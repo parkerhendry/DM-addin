@@ -36,122 +36,103 @@ geotab.addin.digitalMatterDeviceManager = function () {
 
     // Parameter descriptions from the provided paste
     const PARAMETER_DESCRIPTIONS = {
-        // Yabby34G and Oyster34G parameters
-        'Yabby34G': {
-            '2000': {
-                name: 'Basic Tracking',
-                description: 'These parameters determine the tracking mode and tracking intervals of your device.',
-                params: {
-                    'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
-                    'bInTripUploadMinSec': 'In Trip Upload Period (s) - Time between uploads in a trip (seconds)',
-                    'bInTripLogMinSec': 'In Trip Logging Period (s) - Time between GPS fixes in a trip (seconds)',
-                    'bGpsTimeoutMinSec': 'GPS Fix Timeout (s) - Max time to wait for a GPS fix (seconds)',
-                    'fGpsPowerMode': 'GPS Mode - Choose between prioritising GPS performance or power usage [0=Low Power,1=Performance]',
-                    'bTrackingMode': 'Tracking Mode - Mode of location tracking [0=GPS Movement Trips,1=Jostle Trips,2=Periodic Update]'
-                }
-            },
-            '2100': {
-                name: 'Advanced Tracking',
-                description: 'Configure upload behavior - whether at trip start, during movement, at trip end, based on accelerometer activity, and more.',
-                params: {
-                    'fUploadOnStart': 'Upload On Trip Start - Schedule an upload as soon as a trip starts [1=Yes,0=No]',
-                    'fUploadDuring': 'Upload During Trip - Schedule uploads while in trip (enables Tracking->In Trip Upload Period) [1=Yes,0=No]',
-                    'fUploadOnEnd': 'Upload On Trip End - Schedule an upload as soon as a trip ends [1=Yes,0=No]',
-                    'fUploadOnJostle': 'Upload On Jostle - Schedule an upload shortly after accelerometer stops firing [1=Yes,0=No]',
-                    'fAvoidGpsWander': 'Suppress GPS Wander - Filter out small scale GPS movement (noise) [1=Yes,0=No]',
-                    'fCellTowerFallback': 'Cell Tower Fallback - Attempt to locate the device using cell towers when a GPS fix attempt fails [1=Yes,0=No]',
-                    'bOnceOffUploadDelayMinutes': 'Once-off Upload Delay (min) - Uploads once on trip start after this delay. Set to 0 to disable. Requires fw v1.8+',
-                    'bGpsFixMultiplier': 'GPS Fix Multiplier - Attempt GPS fix every this heartbeats (0 - 255). 1 will attempt a fix every heartbeat (default).'
-                }
-            }
-        },
-        'Oyster34G': {
-            '2000': {
-                name: 'Basic Tracking',
-                description: 'These parameters determine the tracking mode and tracking intervals of your device.',
-                params: {
-                    'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
-                    'bInTripUploadMinSec': 'In Trip Upload Period (s) - Time between uploads in a trip (seconds)',
-                    'bInTripLogMinSec': 'In Trip Logging Period (s) - Time between GPS fixes in a trip (seconds)',
-                    'bGpsTimeoutMinSec': 'GPS Fix Timeout (s) - Max time to wait for a GPS fix (seconds)',
-                    'fGpsPowerMode': 'GPS Mode - Choose between prioritising GPS performance or power usage [0=Low Power,1=Performance]',
-                    'bTrackingMode': 'Tracking Mode - Mode of location tracking [0=GPS Movement Trips,1=Jostle Trips,2=Periodic Update]'
-                }
-            },
-            '2100': {
-                name: 'Advanced Tracking',
-                description: 'Configure upload behavior - whether at trip start, during movement, at trip end, based on accelerometer activity, and more.',
-                params: {
-                    'fUploadOnStart': 'Upload On Trip Start - Schedule an upload as soon as a trip starts [1=Yes,0=No]',
-                    'fUploadDuring': 'Upload During Trip - Schedule uploads while in trip (enables Tracking->In Trip Upload Period) [1=Yes,0=No]',
-                    'fUploadOnEnd': 'Upload On Trip End - Schedule an upload as soon as a trip ends [1=Yes,0=No]',
-                    'fUploadOnJostle': 'Upload On Jostle - Schedule an upload shortly after accelerometer stops firing [1=Yes,0=No]',
-                    'fAvoidGpsWander': 'Suppress GPS Wander - Filter out small scale GPS movement (noise) [1=Yes,0=No]',
-                    'fCellTowerFallback': 'Cell Tower Fallback - Attempt to locate the device using cell towers when a GPS fix attempt fails [1=Yes,0=No]',
-                    'bOnceOffUploadDelayMinutes': 'Once-off Upload Delay (min) - Uploads once on trip start after this delay. Set to 0 to disable. Requires fw v1.8+',
-                    'bGpsFixMultiplier': 'GPS Fix Multiplier - Attempt GPS fix every this heartbeats (0 - 255). 1 will attempt a fix every heartbeat (default).'
-                }
-            }
-        },
-        // Oyster2 parameters
-        'Oyster2': {
-            '2000': {
-                name: 'Basic Tracking',
-                description: 'These parameters determine the tracking mode and tracking intervals of your device.',
-                params: {
-                    'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
-                    'bInTripUploadMinSec': 'In Trip Upload Period (s) - Time between uploads in a trip (seconds)',
-                    'bInTripLogMinSec': 'In Trip Logging Period (s) - Time between GPS fixes in a trip (seconds)',
-                    'bGpsTimeoutMinSec': 'GPS Fix Timeout (s) - Max time to wait for a GPS fix (seconds)'
-                }
-            },
-            '2100': {
-                name: 'Advanced Tracking',
-                description: 'Configure upload behavior - whether at trip start, during movement, at trip end, based on accelerometer activity, and more.',
-                params: {
-                    'fPeriodicOnly': 'Periodic Tracking Only - Disable movement tracking - heartbeats only [1=Yes,0=No]',
-                    'fJostleTrips': 'Jostle Based Tracking - Use the accelerometer to delimit trips, instead of GPS movement [1=Yes,0=No]',
-                    'fUploadOnStart': 'Upload On Trip Start - Schedule an upload as soon as a trip starts [1=Yes,0=No]',
-                    'fUploadDuring': 'Upload During Trip - Schedule uploads while in trip (enables Tracking->In Trip Upload Period) [1=Yes,0=No]',
-                    'fUploadOnEnd': 'Upload On Trip End - Schedule an upload as soon as a trip ends [1=Yes,0=No]',
-                    'fUploadOnJostle': 'Upload On Jostle - Schedule an upload shortly after accelerometer stops firing [1=Yes,0=No]',
-                    'fAvoidGpsWander': 'Suppress GPS Wander - Filter out small scale GPS movement (noise) [1=Yes,0=No]',
-                    'fNoGpsFreshen': 'Optimise For Low Signal - Intelligently manage GPS to improve low signal fix times [0=Yes,1=No]',
-                    'fCellTowerFallback': 'Cell Tower Fallback - Attempt to locate the device using cell towers when a GPS fix attempt fails [1=Yes,0=No]',
-                    'bOnceOffUploadDelayMinutes': 'Once-off Upload Delay - Uploads once on trip start after this delay (min). Set to 0 to disable'
-                }
-            }
-        },
-        // YabbyEdge parameters
-        'YabbyEdge': {
-            '2000': {
-                name: 'Basic Tracking',
-                description: 'These parameters determine the tracking mode and tracking intervals of your device.',
-                params: {
-                    'bPeriodicUploadHrMin': 'Heartbeat Upload Period (min) - Period of inactivity before a heartbeat upload (minutes)',
-                    'bMoveLogMinSec': 'Movement Logging Period (seconds) - Time between location scans when moving (seconds)',
-                    'bMoveUploadMinSec': 'Movement Upload Period (seconds) - Time between uploads when movement is detected (seconds)',
-                    'bTrackingMode': 'Tracking Mode - Mode of location tracking [0=Movement (accelerometer) based,1=Periodic Update]'
-                }
-            },
-            '2400': {
-                name: 'Movement Detection',
-                description: 'Detect trips based on accelerometer movement. These parameters only apply in Movement based tracking mode.',
-                params: {
-                    'bDigital': 'Digital Input - Digital Input to set when movement is detected [255=None,0=Emulated Ignition (0),1=Input 1,2=Input 2,3=Input 3,4=Input 4,5=Input 5,6=Input 6,7=Input 7,8=Input 8,9=Input 9]',
-                    'bMoveEndTimeSec_10': 'Movement End Time (s) - Period of inactivity before assuming the device has stopped moving',
-                    'fUploadOnStart': 'Upload On Movement Detection - Schedule an upload as soon as movement is detected [1=Yes,0=No]',
-                    'fUploadOnEnd': 'Upload On Movement End - Schedule an upload as soon as the asset has stopped moving [1=Yes,0=No]',
-                    'fDisableMoveLogs': 'Log During Movement - Perform regular location scans while moving [0=Yes,1=No]',
-                    'fEnableMoveUploads': 'Upload During Movement - Schedule uploads while moving [1=Yes,0=No]',
-                    'fDisableWakeFilter': 'Disable Wake Filter - Disables trip start filtering - trips start even for momentary jostles [1=Yes,0=No]',
-                    'fDisableLogFilter': 'Disable Scan Filter - Disables trip location scan filtering [1=Yes,0=No]',
-                    'bOnceOffUploadDelayMinutes': 'Once-Off Upload Delay (min) - Schedule a delayed upload after movement is detected. Set to 0 to disable',
-                    'bGpsFixMultiplier': 'Location Scan Multiplier - Attempt location scan on every this number of heartbeats (0 - 255). 1 will attempt a scan every heartbeat (default)'
-                }
-            }
+    // Yabby34G parameters
+    'Yabby34G': {
+        '2000': {
+        name: 'Basic Tracking',
+        description: 'Set how often your device records location data and uploads it.',
+        params: {
+            'bPeriodicUploadHrMin': 'Heartbeat Interval – How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bInTripUploadMinSec': 'Upload While Moving – How often the device sends updates while in a trip (seconds). ⚠️ More frequent uploads use more battery.',
+            'bInTripLogMinSec': 'GPS Fix Frequency – How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.',
+            'fGpsPowerMode': 'GPS Power Mode – Choose whether to save battery or prioritise GPS accuracy.',
+            'bTrackingMode': 'Tracking Method – Select how the device detects and tracks trips.'
         }
+        },
+        '2100': {
+        name: 'Advanced Tracking',
+        description: 'Control when the device uploads data during trips.',
+        params: {
+            'fUploadOnStart': 'Upload at Trip Start – Sends data immediately when a trip begins.',
+            'fUploadDuring': 'Upload During Trip – Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
+            'fUploadOnEnd': 'Upload at Trip End – Sends data immediately after the trip finishes.'
+        }
+        }
+    },
+
+    // Oyster34G parameters (same wording as Yabby34G for consistency)
+    'Oyster34G': {
+        '2000': {
+        name: 'Basic Tracking',
+        description: 'Set how often your device records location data and uploads it.',
+        params: {
+            'bPeriodicUploadHrMin': 'Heartbeat Interval – How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bInTripUploadMinSec': 'Upload While Moving – How often the device sends updates while in a trip (seconds). ⚠️ More frequent uploads use more battery.',
+            'bInTripLogMinSec': 'GPS Fix Frequency – How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.',
+            'fGpsPowerMode': 'GPS Power Mode – Choose whether to save battery or prioritise GPS accuracy.',
+            'bTrackingMode': 'Tracking Method – Select how the device detects and tracks trips.'
+        }
+        },
+        '2100': {
+        name: 'Advanced Tracking',
+        description: 'Control when the device uploads data during trips.',
+        params: {
+            'fUploadOnStart': 'Upload at Trip Start – Sends data immediately when a trip begins.',
+            'fUploadDuring': 'Upload During Trip – Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
+            'fUploadOnEnd': 'Upload at Trip End – Sends data immediately after the trip finishes.'
+        }
+        }
+    },
+
+    // Oyster2 parameters
+    'Oyster2': {
+        '2000': {
+        name: 'Basic Tracking',
+        description: 'Set how often your device records location data and uploads it.',
+        params: {
+            'bPeriodicUploadHrMin': 'Heartbeat Interval – How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bInTripUploadMinSec': 'Upload While Moving – How often the device sends updates while in a trip (seconds). ⚠️ More frequent uploads use more battery.',
+            'bInTripLogMinSec': 'GPS Fix Frequency – How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.'
+        }
+        },
+        '2100': {
+        name: 'Advanced Tracking',
+        description: 'Control how trips are detected and when uploads happen.',
+        params: {
+            'fPeriodicOnly': 'Heartbeat Only – Disable movement tracking so the device only sends periodic check-ins.',
+            'fJostleTrips': 'Accelerometer Trips – Use motion detection instead of GPS movement to detect trips.',
+            'fUploadOnStart': 'Upload at Trip Start – Sends data immediately when a trip begins.',
+            'fUploadDuring': 'Upload During Trip – Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
+            'fUploadOnEnd': 'Upload at Trip End – Sends data immediately after the trip finishes.'
+        }
+        }
+    },
+
+    // YabbyEdge parameters
+    'YabbyEdge': {
+        '2000': {
+        name: 'Basic Tracking',
+        description: 'Set how often your device scans for location and uploads results.',
+        params: {
+            'bPeriodicUploadHrMin': 'Heartbeat Interval – How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bMoveLogMinSec': 'Movement Logging Interval – How often the device takes a location scan while moving (seconds). ⚠️ More frequent scans reduce battery life.',
+            'bMoveUploadMinSec': 'Movement Upload Interval – How often the device uploads data while moving (seconds). ⚠️ More frequent uploads reduce battery life.',
+            'bTrackingMode': 'Tracking Method – Select whether the device reports based on movement or a fixed time schedule.'
+        }
+        },
+        '2400': {
+        name: 'Movement Detection',
+        description: 'Control how the device reacts when movement starts and stops.',
+        params: {
+            'fUploadOnStart': 'Upload on Movement Start – Sends an update right when movement begins.',
+            'fUploadOnEnd': 'Upload on Movement End – Sends an update right after movement stops.',
+            'fDisableMoveLogs': 'Log During Movement – Continue recording locations while moving (disable to save battery).',
+            'fEnableMoveUploads': 'Upload During Movement – Sends updates while moving. ⚠️ Increases battery use.'
+        }
+        }
+    }
     };
+
 
     // Add this constant after the existing CLIENT_MAPPING constant:
     const PRODUCT_ID_TO_DEVICE_TYPE = {

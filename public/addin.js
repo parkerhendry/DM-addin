@@ -42,9 +42,9 @@ geotab.addin.digitalMatterDeviceManager = function () {
         name: 'Basic Tracking',
         description: 'Set how often your device records location data and uploads it.',
         params: {
-            'bPeriodicUploadHrMin': 'Heartbeat Interval - How often the device checks in when idle (minutes).\n ⚠️ Shorter times use more battery.',
-            'bInTripUploadMinSec': 'Upload While Moving - How often the device sends updates during a trip (seconds).\n ⚠️ More frequent uploads use more battery.',
-            'bInTripLogMinSec': 'GPS Fix Frequency - How often the device records a GPS point during a trip (seconds).\n ⚠️ More frequent logging gives more detail but reduces battery life.',
+            'bPeriodicUploadHrMin': 'Heartbeat Interval - How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bInTripUploadMinSec': 'Upload While Moving - How often the device sends updates during a trip (seconds). ⚠️ More frequent uploads use more battery.',
+            'bInTripLogMinSec': 'GPS Fix Frequency - How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.',
             'fGpsPowerMode': 'GPS Power Mode - Choose whether to save battery or prioritize GPS accuracy.',
             'bTrackingMode': 'Tracking Method - Select how the device detects and tracks trips.'
         }
@@ -611,6 +611,28 @@ geotab.addin.digitalMatterDeviceManager = function () {
             return;
         }
         
+        // Helper function to format parameter descriptions with styled disclaimers
+        function formatParameterDescription(description) {
+            // Split by warning emoji to separate main description from disclaimers
+            const parts = description.split('⚠️');
+            
+            if (parts.length === 1) {
+                // No disclaimer, return as is
+                return description;
+            }
+            
+            const mainDescription = parts[0].trim();
+            const disclaimers = parts.slice(1).map(part => part.trim()).filter(part => part.length > 0);
+            
+            let formattedHtml = mainDescription;
+            
+            disclaimers.forEach(disclaimer => {
+                formattedHtml += ` <span class="parameter-disclaimer">⚠️ ${disclaimer}</span>`;
+            });
+            
+            return formattedHtml;
+        }
+        
         let parametersHtml = `
             <div id="params-${device.serialNumber}" class="device-parameters mt-3">
                 <div class="parameters-container">
@@ -654,6 +676,9 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 const [paramName, ...descParts] = paramDescription.split(' - ');
                 const paramDesc = descParts.join(' - ');
                 
+                // Format the parameter description with styled disclaimers
+                const formattedParamDesc = formatParameterDescription(paramDesc);
+                
                 // Check if this parameter should use a dropdown
                 const dropdownOptions = generateDropdownOptions(paramKey, paramValue, device.deviceType);
                 
@@ -676,7 +701,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                     title="${paramDescription}">
                                 ${optionsHtml}
                             </select>
-                            <div class="parameter-description">${paramDesc}</div>
+                            <div class="parameter-description">${formattedParamDesc}</div>
                         </div>
                     `;
                 } else {
@@ -692,7 +717,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                 data-device="${device.serialNumber}"
                                 onchange="markParameterAsChanged(this)"
                                 title="${paramDescription}">
-                            <div class="parameter-description">${paramDesc}</div>
+                            <div class="parameter-description">${formattedParamDesc}</div>
                         </div>
                     `;
                 }

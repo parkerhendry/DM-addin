@@ -36,103 +36,102 @@ geotab.addin.digitalMatterDeviceManager = function () {
 
     // Parameter descriptions from the provided paste
     const PARAMETER_DESCRIPTIONS = {
-    // Yabby34G parameters
+    // Yabby34G
     'Yabby34G': {
         '2000': {
         name: 'Basic Tracking',
         description: 'Set how often your device records location data and uploads it.',
         params: {
-            'bPeriodicUploadHrMin': 'Heartbeat Interval – How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
-            'bInTripUploadMinSec': 'Upload While Moving – How often the device sends updates while in a trip (seconds). ⚠️ More frequent uploads use more battery.',
-            'bInTripLogMinSec': 'GPS Fix Frequency – How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.',
-            'fGpsPowerMode': 'GPS Power Mode – Choose whether to save battery or prioritise GPS accuracy.',
-            'bTrackingMode': 'Tracking Method – Select how the device detects and tracks trips.'
+            'bPeriodicUploadHrMin': 'Heartbeat Interval - How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bInTripUploadMinSec': 'Upload While Moving - How often the device sends updates during a trip (seconds). ⚠️ More frequent uploads use more battery.',
+            'bInTripLogMinSec': 'GPS Fix Frequency - How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.',
+            'fGpsPowerMode': 'GPS Power Mode - Choose whether to save battery or prioritize GPS accuracy.',
+            'bTrackingMode': 'Tracking Method - Select how the device detects and tracks trips.'
         }
         },
         '2100': {
         name: 'Advanced Tracking',
         description: 'Control when the device uploads data during trips.',
         params: {
-            'fUploadOnStart': 'Upload at Trip Start – Sends data immediately when a trip begins.',
-            'fUploadDuring': 'Upload During Trip – Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
-            'fUploadOnEnd': 'Upload at Trip End – Sends data immediately after the trip finishes.'
+            'fUploadOnStart': 'Upload at Trip Start - Sends data immediately when a trip begins.',
+            'fUploadDuring': 'Upload During Trip - Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
+            'fUploadOnEnd': 'Upload at Trip End - Sends data immediately after the trip finishes.'
         }
         }
     },
 
-    // Oyster34G parameters (same wording as Yabby34G for consistency)
+    // Oyster34G
     'Oyster34G': {
         '2000': {
         name: 'Basic Tracking',
         description: 'Set how often your device records location data and uploads it.',
         params: {
-            'bPeriodicUploadHrMin': 'Heartbeat Interval – How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
-            'bInTripUploadMinSec': 'Upload While Moving – How often the device sends updates while in a trip (seconds). ⚠️ More frequent uploads use more battery.',
-            'bInTripLogMinSec': 'GPS Fix Frequency – How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.',
-            'fGpsPowerMode': 'GPS Power Mode – Choose whether to save battery or prioritise GPS accuracy.',
-            'bTrackingMode': 'Tracking Method – Select how the device detects and tracks trips.'
+            'bPeriodicUploadHrMin': 'Heartbeat Interval - How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bInTripUploadMinSec': 'Upload While Moving - How often the device sends updates during a trip (seconds). ⚠️ More frequent uploads use more battery.',
+            'bInTripLogMinSec': 'GPS Fix Frequency - How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.',
+            'fGpsPowerMode': 'GPS Power Mode - Choose whether to save battery or prioritize GPS accuracy.',
+            'bTrackingMode': 'Tracking Method - Select how the device detects and tracks trips.'
         }
         },
         '2100': {
         name: 'Advanced Tracking',
         description: 'Control when the device uploads data during trips.',
         params: {
-            'fUploadOnStart': 'Upload at Trip Start – Sends data immediately when a trip begins.',
-            'fUploadDuring': 'Upload During Trip – Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
-            'fUploadOnEnd': 'Upload at Trip End – Sends data immediately after the trip finishes.'
+            'fUploadOnStart': 'Upload at Trip Start - Sends data immediately when a trip begins.',
+            'fUploadDuring': 'Upload During Trip - Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
+            'fUploadOnEnd': 'Upload at Trip End - Sends data immediately after the trip finishes.'
         }
         }
     },
 
-    // Oyster2 parameters
+    // Oyster2
     'Oyster2': {
         '2000': {
         name: 'Basic Tracking',
         description: 'Set how often your device records location data and uploads it.',
         params: {
-            'bPeriodicUploadHrMin': 'Heartbeat Interval – How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
-            'bInTripUploadMinSec': 'Upload While Moving – How often the device sends updates while in a trip (seconds). ⚠️ More frequent uploads use more battery.',
-            'bInTripLogMinSec': 'GPS Fix Frequency – How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.'
+            'bPeriodicUploadHrMin': 'Heartbeat Interval - How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bInTripUploadMinSec': 'Upload While Moving - How often the device sends updates during a trip (seconds). ⚠️ More frequent uploads use more battery.',
+            'bInTripLogMinSec': 'GPS Fix Frequency - How often the device records a GPS point during a trip (seconds). ⚠️ More frequent logging gives more detail but reduces battery life.'
         }
         },
         '2100': {
         name: 'Advanced Tracking',
         description: 'Control how trips are detected and when uploads happen.',
         params: {
-            'fPeriodicOnly': 'Heartbeat Only – Disable movement tracking so the device only sends periodic check-ins.',
-            'fJostleTrips': 'Accelerometer Trips – Use motion detection instead of GPS movement to detect trips.',
-            'fUploadOnStart': 'Upload at Trip Start – Sends data immediately when a trip begins.',
-            'fUploadDuring': 'Upload During Trip – Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
-            'fUploadOnEnd': 'Upload at Trip End – Sends data immediately after the trip finishes.'
+            'fPeriodicOnly': 'Heartbeat Only - Disable movement tracking so the device only sends periodic check-ins.',
+            'fJostleTrips': 'Accelerometer Trips - Use motion detection instead of GPS movement to detect trips.',
+            'fUploadOnStart': 'Upload at Trip Start - Sends data immediately when a trip begins.',
+            'fUploadDuring': 'Upload During Trip - Sends updates while moving (uses the In-Trip Upload setting). ⚠️ Increases battery use.',
+            'fUploadOnEnd': 'Upload at Trip End - Sends data immediately after the trip finishes.'
         }
         }
     },
 
-    // YabbyEdge parameters
+    // YabbyEdge
     'YabbyEdge': {
         '2000': {
         name: 'Basic Tracking',
         description: 'Set how often your device scans for location and uploads results.',
         params: {
-            'bPeriodicUploadHrMin': 'Heartbeat Interval – How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
-            'bMoveLogMinSec': 'Movement Logging Interval – How often the device takes a location scan while moving (seconds). ⚠️ More frequent scans reduce battery life.',
-            'bMoveUploadMinSec': 'Movement Upload Interval – How often the device uploads data while moving (seconds). ⚠️ More frequent uploads reduce battery life.',
-            'bTrackingMode': 'Tracking Method – Select whether the device reports based on movement or a fixed time schedule.'
+            'bPeriodicUploadHrMin': 'Heartbeat Interval - How often the device checks in when idle (minutes). ⚠️ Shorter times use more battery.',
+            'bMoveLogMinSec': 'Movement Logging Interval - How often the device takes a location scan while moving (seconds). ⚠️ More frequent scans reduce battery life.',
+            'bMoveUploadMinSec': 'Movement Upload Interval - How often the device uploads data while moving (seconds). ⚠️ More frequent uploads reduce battery life.',
+            'bTrackingMode': 'Tracking Method - Select whether the device reports based on movement or a fixed time schedule.'
         }
         },
         '2400': {
         name: 'Movement Detection',
         description: 'Control how the device reacts when movement starts and stops.',
         params: {
-            'fUploadOnStart': 'Upload on Movement Start – Sends an update right when movement begins.',
-            'fUploadOnEnd': 'Upload on Movement End – Sends an update right after movement stops.',
-            'fDisableMoveLogs': 'Log During Movement – Continue recording locations while moving (disable to save battery).',
-            'fEnableMoveUploads': 'Upload During Movement – Sends updates while moving. ⚠️ Increases battery use.'
+            'fUploadOnStart': 'Upload on Movement Start - Sends an update right when movement begins.',
+            'fUploadOnEnd': 'Upload on Movement End - Sends an update right after movement stops.',
+            'fDisableMoveLogs': 'Log During Movement - Record locations while moving (disable to save battery).',
+            'fEnableMoveUploads': 'Upload During Movement - Sends updates while moving. ⚠️ Increases battery use.'
         }
         }
     }
     };
-
 
     // Add this constant after the existing CLIENT_MAPPING constant:
     const PRODUCT_ID_TO_DEVICE_TYPE = {

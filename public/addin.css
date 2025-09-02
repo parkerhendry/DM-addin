@@ -841,3 +841,48 @@ body.status-bar-active .header-section {
         width: fit-content;
     }
 }
+
+/* Recovery Mode Styles */
+.recovery-mode {
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #fff8e1 0%, #ffffff 100%);
+    box-shadow: 0 4px 6px rgba(255, 193, 7, 0.1);
+}
+
+.recovery-container {
+    padding: 1.5rem;
+}
+
+.recovery-header h5 {
+    color: #856404;
+}
+
+.recovery-queues {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.recovery-empty {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    border: 2px dashed #dee2e6;
+}
+
+.table-warning {
+    --bs-table-bg: rgba(255, 193, 7, 0.2);
+}
+
+/* Responsive button stacking */
+@media (max-width: 767px) {
+    .device-card .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+    
+    .device-card .btn:last-child {
+        margin-bottom: 0;
+    }
+}

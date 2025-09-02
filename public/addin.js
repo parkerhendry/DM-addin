@@ -126,7 +126,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
         params: {
             'fUploadOnStart': 'Upload on Movement Start - Sends an update right when movement begins.',
             'fUploadOnEnd': 'Upload on Movement End - Sends an update right after movement stops.',
-            'fDisableMoveLogs': 'Log During Movement - Record locations while moving (disable to save battery).',
+            'fDisableMoveLogs': 'Log During Movement - Record locations while moving. ⚠️ Increases battery use.',
             'fEnableMoveUploads': 'Upload During Movement - Sends updates while moving. ⚠️ Increases battery use.'
         }
         }
@@ -207,6 +207,15 @@ geotab.addin.digitalMatterDeviceManager = function () {
             const params = new URLSearchParams(parts[1]);
             params.append('deviceType', deviceType);
             url = `${NETLIFY_BASE_URL}/api/get-device-params?${params}`;
+        } else if (endpoint.includes('/AsyncMessaging/Send')) {
+            const params = new URLSearchParams(endpoint.split('?')[1]);
+            url = `${NETLIFY_BASE_URL}/api/send-recovery-mode?${params}`;
+        } else if (endpoint.includes('/AsyncMessaging/Get')) {
+            const params = new URLSearchParams(endpoint.split('?')[1]);
+            url = `${NETLIFY_BASE_URL}/api/get-recovery-mode?${params}`;
+        } else if (endpoint.includes('/AsyncMessaging/Cancel')) {
+            const params = new URLSearchParams(endpoint.split('?')[1]);
+            url = `${NETLIFY_BASE_URL}/api/cancel-recovery-mode?${params}`;
         } else {
             throw new Error(`Unsupported endpoint: ${endpoint}`);
         }
@@ -492,10 +501,14 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                     `}
                                 </div>
                                 <div class="col-md-3 text-end">
-                                    <button class="btn btn-primary btn-sm me-2" 
+                                    <button class="btn btn-primary btn-sm me-2 mb-1" 
                                             onclick="viewDeviceParameters('${device.serialNumber}')"
                                             ${!device.systemParameters ? 'disabled' : ''}>
                                         <i class="fas fa-cog me-1"></i>Parameters
+                                    </button>
+                                    <button class="btn btn-warning btn-sm mb-1" 
+                                            onclick="viewRecoveryMode('${device.serialNumber}')">
+                                        <i class="fas fa-life-ring me-1"></i>Recovery Mode
                                     </button>
                                 </div>
                             </div>
@@ -1226,6 +1239,250 @@ geotab.addin.digitalMatterDeviceManager = function () {
             }
         });
     }
+
+    /**
+     * View recovery mode queues for a device
+     */
+    window.viewRecoveryMode = async function(serialNumber) {
+        const device = digitalMatterDevices.find(d => d.serialNumber === serialNumber);
+        if (!device) {
+            showAlert('Device not found', 'danger');
+            return;
+        }
+        
+        // Check if recovery mode is already being shown for this device
+        const existingRecovery = document.getElementById(`recovery-${serialNumber}`);
+        if (existingRecovery) {
+            // Toggle visibility
+            if (existingRecovery.style.display === 'none') {
+                existingRecovery.style.display = 'block';
+            } else {
+                existingRecovery.style.display = 'none';
+            }
+            return;
+        }
+        
+        await showRecoveryModeInline(device);
+    };
+
+    /**
+     * Show recovery mode interface inline
+     */
+    async function showRecoveryModeInline(device) {
+        try {
+            // Get current recovery mode queues
+            const response = await makeDigitalMatterCall(`/AsyncMessaging/Get?serial=${device.serialNumber}`);
+            
+            // Filter for recovery mode messages (MessageType = 3 and CANAddress = 4294967295)
+            const recoveryModeQueues = response.filter(item => 
+                item.MessageType === 3 && item.CANAddress === 4294967295
+            );
+            
+            showRecoveryModeUI(device, recoveryModeQueues);
+            
+        } catch (error) {
+            console.error('Error getting recovery mode queues:', error);
+            showAlert('Error loading recovery mode queues: ' + error.message, 'danger');
+            // Show UI with empty queues in case of error
+            showRecoveryModeUI(device, []);
+        }
+    }
+
+    /**
+     * Show recovery mode UI
+     */
+    function showRecoveryModeUI(device, queues) {
+        // Find the device card
+        const deviceCards = document.querySelectorAll('.device-card');
+        let targetCard = null;
+        
+        deviceCards.forEach(card => {
+            const cardText = card.textContent;
+            if (cardText.includes(device.serialNumber)) {
+                targetCard = card;
+            }
+        });
+        
+        if (!targetCard) return;
+        
+        let recoveryHtml = `
+            <div id="recovery-${device.serialNumber}" class="recovery-mode mt-3">
+                <div class="recovery-container">
+                    <div class="recovery-header mb-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h5 class="text-warning mb-1">
+                                    <i class="fas fa-life-ring me-2"></i>Recovery Mode
+                                </h5>
+                                <p class="text-muted mb-0">${device.geotabName || device.serialNumber}</p>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="hideRecoveryMode('${device.serialNumber}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="recovery-content">
+                        <div class="recovery-actions mb-4">
+                            <button class="btn btn-warning" onclick="triggerRecoveryMode('${device.serialNumber}')">
+                                <i class="fas fa-play me-2"></i>Trigger Recovery Mode
+                            </button>
+                        </div>
+        `;
+        
+        if (queues.length > 0) {
+            recoveryHtml += `
+                        <div class="recovery-queues">
+                            <h6 class="mb-3">Active Recovery Mode Queues (${queues.length})</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-warning">
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Expiry Date</th>
+                                            <th>Message ID</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            `;
+            
+            queues.forEach(queue => {
+                const expiryDate = formatDateTime(queue.ExpiryDateUTC);
+                const statusBadge = getStatusBadge(queue.MessageStatus);
+                
+                recoveryHtml += `
+                                        <tr>
+                                            <td>${statusBadge}</td>
+                                            <td>${expiryDate}</td>
+                                            <td><code>${queue.MessageId}</code></td>
+                                            <td>
+                                                <button class="btn btn-danger btn-sm" 
+                                                        onclick="cancelRecoveryMode('${device.serialNumber}', '${queue.MessageId}')">
+                                                    <i class="fas fa-times me-1"></i>Cancel
+                                                </button>
+                                            </td>
+                                        </tr>
+                `;
+            });
+            
+            recoveryHtml += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+            `;
+        } else {
+            recoveryHtml += `
+                        <div class="recovery-empty text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No active recovery mode queues</p>
+                        </div>
+            `;
+        }
+        
+        recoveryHtml += `
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Insert the recovery mode UI after the card
+        targetCard.insertAdjacentHTML('afterend', recoveryHtml);
+        
+        // Scroll to the recovery mode section
+        const recoveryElement = document.getElementById(`recovery-${device.serialNumber}`);
+        if (recoveryElement) {
+            recoveryElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    /**
+     * Format datetime from UTC ISO string to readable format
+     */
+    function formatDateTime(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
+    /**
+     * Get status badge HTML based on message status
+     */
+    function getStatusBadge(status) {
+        const statusMap = {
+            'Pending': 'bg-warning text-dark',
+            'Sent': 'bg-success',
+            'Failed': 'bg-danger',
+            'Cancelled': 'bg-secondary',
+            'Expired': 'bg-dark'
+        };
+        
+        const badgeClass = statusMap[status] || 'bg-info';
+        return `<span class="badge ${badgeClass}">${status}</span>`;
+    }
+
+    /**
+     * Trigger recovery mode for a device
+     */
+    window.triggerRecoveryMode = async function(serialNumber) {
+        try {
+            showAlert('Triggering recovery mode...', 'info');
+            
+            await makeDigitalMatterCall(`/AsyncMessaging/Send?serial=${serialNumber}`, 'POST');
+            
+            showAlert('Recovery mode triggered successfully!', 'success');
+            
+            // Refresh the recovery mode display
+            setTimeout(() => {
+                hideRecoveryMode(serialNumber);
+                viewRecoveryMode(serialNumber);
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error triggering recovery mode:', error);
+            showAlert('Error triggering recovery mode: ' + error.message, 'danger');
+        }
+    };
+
+    /**
+     * Cancel a recovery mode queue
+     */
+    window.cancelRecoveryMode = async function(serialNumber, messageId) {
+        try {
+            showAlert('Cancelling recovery mode queue...', 'info');
+            
+            await makeDigitalMatterCall(`/AsyncMessaging/Cancel?serial=${serialNumber}&id=${messageId}`);
+            
+            showAlert('Recovery mode queue cancelled successfully!', 'success');
+            
+            // Refresh the recovery mode display
+            setTimeout(() => {
+                hideRecoveryMode(serialNumber);
+                viewRecoveryMode(serialNumber);
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error cancelling recovery mode:', error);
+            showAlert('Error cancelling recovery mode: ' + error.message, 'danger');
+        }
+    };
+
+    /**
+     * Hide recovery mode interface
+     */
+    window.hideRecoveryMode = function(serialNumber) {
+        const recoveryElement = document.getElementById(`recovery-${serialNumber}`);
+        if (recoveryElement) {
+            recoveryElement.remove();
+        }
+    };
 
     return {
         /**

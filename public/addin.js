@@ -1306,7 +1306,6 @@ geotab.addin.digitalMatterDeviceManager = function () {
         showRecoveryModeUI(device, recoveryModeQueues);
     }
 
-
     /**
      * Show recovery mode UI - Modified to handle current recovery mode status
      */
@@ -1332,6 +1331,9 @@ geotab.addin.digitalMatterDeviceManager = function () {
         // Check if device is currently in recovery mode
         const isInRecoveryMode = device.recoveryModeStatus === true;
         
+        // Check if there are any active queues (this will disable the main action buttons)
+        const hasActiveQueues = queues.length > 0;
+        
         let recoveryHtml = `
             <div id="recovery-${device.serialNumber}" class="recovery-mode mt-3">
                 <div class="recovery-container">
@@ -1344,17 +1346,27 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                 <p class="text-muted mb-0">${device.geotabName || device.serialNumber}</p>
                                 ${isInRecoveryMode ? `
                                     <span class="badge bg-danger mt-1">
-                                        <i class="fas fa-exclamation-triangle me-1"></i>Currently in Recovery Mode
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Recovery Mode
                                     </span>
                                 ` : `
                                     <span class="badge bg-success mt-1">
-                                        <i class="fas fa-check-circle me-1"></i>Normal Operation
+                                        <i class="fas fa-check-circle me-1"></i>Normal Mode
                                     </span>
                                 `}
                             </div>
                             <button class="btn btn-outline-secondary btn-sm" onclick="hideRecoveryMode('${device.serialNumber}')">
                                 <i class="fas fa-times"></i>
                             </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Battery Usage Warning -->
+                    <div class="alert alert-warning mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
+                            <div>
+                                <strong>Warning:</strong> Enabling recovery mode will cause the device to update much more frequently and use significantly more battery power until its expiration date. Use this feature only when necessary for device recovery.
+                            </div>
                         </div>
                     </div>
                     
@@ -1370,18 +1382,28 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                         id="expiryDate-${device.serialNumber}" 
                                         value="${defaultExpiryString}"
                                         min="${new Date().toISOString().slice(0, 16)}"
-                                        ${isInRecoveryMode ? 'disabled' : ''}>
+                                        ${isInRecoveryMode || hasActiveQueues ? 'disabled' : ''}>
                                 </div>
                                 <div class="col-md-6">
                                     ${isInRecoveryMode ? `
-                                        <button class="btn btn-danger" onclick="cancelCurrentRecoveryMode('${device.serialNumber}')">
+                                        <button class="btn btn-danger" 
+                                                onclick="cancelCurrentRecoveryMode('${device.serialNumber}')"
+                                                ${hasActiveQueues ? 'disabled' : ''}>
                                             <i class="fas fa-stop me-2"></i>Cancel Recovery Mode
                                         </button>
                                     ` : `
-                                        <button class="btn btn-warning" onclick="triggerRecoveryMode('${device.serialNumber}')">
+                                        <button class="btn btn-warning" 
+                                                onclick="triggerRecoveryMode('${device.serialNumber}')"
+                                                ${hasActiveQueues ? 'disabled' : ''}>
                                             <i class="fas fa-play me-2"></i>Trigger Recovery Mode
                                         </button>
                                     `}
+                                    ${hasActiveQueues ? `
+                                        <div class="text-muted small mt-2">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Action disabled while queue entries are active
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1389,6 +1411,16 @@ geotab.addin.digitalMatterDeviceManager = function () {
         
         if (queues.length > 0) {
             recoveryHtml += `
+                        <!-- Queue Update Disclaimer -->
+                        <div class="alert alert-info mb-3">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-info-circle me-2 mt-1"></i>
+                                <div>
+                                    <strong>Note:</strong> Queue changes will not take effect until the device updates again. The device must connect to receive new commands.
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="recovery-queues">
                             <h6 class="mb-3">Active Recovery Mode Queues (${queues.length})</h6>
                             <div class="table-responsive">

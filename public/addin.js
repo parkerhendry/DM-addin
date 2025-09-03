@@ -1441,11 +1441,35 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 console.log("Original expiry date:", queue.ExpiryDateUTC, "Formatted:", expiryDate);
                 const statusBadge = getStatusBadge(queue.MessageStatus);
                 
+                // Determine what action this queue entry will perform
+                // If device is currently in recovery mode, queue entries will change it to normal mode
+                // If device is currently in normal mode, queue entries will change it to recovery mode
+                let pendingAction;
+                let actionIcon;
+                let actionClass;
+                
+                if (isInRecoveryMode) {
+                    pendingAction = "Change to normal mode";
+                    actionIcon = "fas fa-check-circle";
+                    actionClass = "text-success";
+                } else {
+                    pendingAction = "Enable recovery mode";
+                    actionIcon = "fas fa-exclamation-triangle";
+                    actionClass = "text-warning";
+                }
+                
                 recoveryHtml += `
                                         <tr>
                                             <td>${statusBadge}</td>
                                             <td>${expiryDate}</td>
-                                            <td><code>${queue.MessageId}</code></td>
+                                            <td>
+                                                <span class="${actionClass}">
+                                                    <i class="${actionIcon} me-2"></i>${pendingAction}
+                                                </span>
+                                                <div class="text-muted small mt-1">
+                                                    <code class="small">${queue.MessageId}</code>
+                                                </div>
+                                            </td>
                                             <td>
                                                 <button class="btn btn-danger btn-sm" 
                                                         onclick="cancelRecoveryMode('${device.serialNumber}', '${queue.MessageId}')">

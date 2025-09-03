@@ -1429,8 +1429,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                         <tr>
                                             <th>Status</th>
                                             <th>Expiry Date (EST)</th>
-                                            <th>Message ID</th>
-                                            <th>Action</th>
+                                            <th>Pending Action</th>
+                                            <th>Controls</th>
                                         </tr>
                                     </thead>
                                     <tbody>

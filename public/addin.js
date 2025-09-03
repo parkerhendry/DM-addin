@@ -1321,6 +1321,11 @@ geotab.addin.digitalMatterDeviceManager = function () {
         
         if (!targetCard) return;
         
+        // Create default expiry date (1 hour from now)
+        const defaultExpiry = new Date();
+        defaultExpiry.setHours(defaultExpiry.getHours() + 1);
+        const defaultExpiryString = defaultExpiry.toISOString().slice(0, 16); // Format for datetime-local input
+        
         let recoveryHtml = `
             <div id="recovery-${device.serialNumber}" class="recovery-mode mt-3">
                 <div class="recovery-container">
@@ -1340,9 +1345,23 @@ geotab.addin.digitalMatterDeviceManager = function () {
                     
                     <div class="recovery-content">
                         <div class="recovery-actions mb-4">
-                            <button class="btn btn-warning" onclick="triggerRecoveryMode('${device.serialNumber}')">
-                                <i class="fas fa-play me-2"></i>Trigger Recovery Mode
-                            </button>
+                            <div class="row align-items-end">
+                                <div class="col-md-6">
+                                    <label for="expiryDate-${device.serialNumber}" class="form-label fw-semibold">
+                                        Expiry Date & Time
+                                    </label>
+                                    <input type="datetime-local" 
+                                        class="form-control" 
+                                        id="expiryDate-${device.serialNumber}" 
+                                        value="${defaultExpiryString}"
+                                        min="${new Date().toISOString().slice(0, 16)}">
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-warning" onclick="triggerRecoveryMode('${device.serialNumber}')">
+                                        <i class="fas fa-play me-2"></i>Trigger Recovery Mode
+                                    </button>
+                                </div>
+                            </div>
                         </div>
         `;
         
@@ -1449,11 +1468,41 @@ geotab.addin.digitalMatterDeviceManager = function () {
      */
     window.triggerRecoveryMode = async function(serialNumber) {
         try {
+            // Get the expiry date from the input
+            const expiryInput = document.getElementById(`expiryDate-${serialNumber}`);
+            if (!expiryInput) {
+                showAlert('Error: Could not find expiry date input', 'danger');
+                return;
+            }
+            
+            const expiryValue = expiryInput.value;
+            if (!expiryValue) {
+                showAlert('Please select an expiry date and time', 'warning');
+                return;
+            }
+            
+            // Convert to Date object and validate it's in the future
+            const expiryDate = new Date(expiryValue);
+            const now = new Date();
+            
+            if (expiryDate <= now) {
+                showAlert('Expiry date must be in the future', 'warning');
+                return;
+            }
+            
             showAlert('Triggering recovery mode...', 'info');
             
-            await makeDigitalMatterCall(`/AsyncMessaging/Send?serial=${serialNumber}`, 'POST');
+            // Pass the expiry date to the API call
+            const requestBody = {
+                MessageType: 3,
+                CANAddress: 4294967295,
+                Data: [3],
+                ExpiryDateUTC: expiryDate.toISOString()
+            };
             
-            showAlert('Recovery mode triggered successfully!', 'success');
+            await makeDigitalMatterCall(`/AsyncMessaging/Send?serial=${serialNumber}`, 'POST', requestBody);
+            
+            showAlert(`Recovery mode triggered successfully! Expires: ${expiryDate.toLocaleString()}`, 'success');
             
             // Update the device's recovery mode queues
             const device = digitalMatterDevices.find(d => d.serialNumber === serialNumber);

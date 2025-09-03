@@ -20,16 +20,34 @@ exports.handler = async (event, context) => {
       throw new Error('Serial parameter is required');
     }
 
-    // Create expiry date 1 hour from now
-    const expiryDate = new Date();
-    expiryDate.setHours(expiryDate.getHours() + 1);
+    // Parse the request body to get the expiry date
+    let requestBody;
+    if (event.body) {
+      requestBody = JSON.parse(event.body);
+    } else {
+      // Fallback: create expiry date 1 hour from now if no body provided
+      const expiryDate = new Date();
+      expiryDate.setHours(expiryDate.getHours() + 1);
+      
+      requestBody = {
+        MessageType: 3,
+        CANAddress: 4294967295,
+        Data: [3],
+        ExpiryDateUTC: expiryDate.toISOString()
+      };
+    }
 
-    const requestBody = {
-      MessageType: 3,
-      CANAddress: 4294967295,
-      Data: [3],
-      ExpiryDateUTC: expiryDate.toISOString()
-    };
+    // Validate that we have the required fields
+    if (!requestBody.ExpiryDateUTC) {
+      throw new Error('ExpiryDateUTC is required in request body');
+    }
+
+    // Validate that the expiry date is in the future
+    const expiryDate = new Date(requestBody.ExpiryDateUTC);
+    const now = new Date();
+    if (expiryDate <= now) {
+      throw new Error('Expiry date must be in the future');
+    }
 
     const response = await fetch(`${DM_API_BASE}/AsyncMessaging/Send?serial=${serial}`, {
       method: 'POST',

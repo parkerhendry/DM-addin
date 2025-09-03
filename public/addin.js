@@ -1459,7 +1459,10 @@ geotab.addin.digitalMatterDeviceManager = function () {
      * Format datetime from UTC ISO string to EST
      */
     function formatDateTimeEST(isoString) {
-        const date = new Date(isoString);
+        // Force interpret as UTC by appending Z if missing
+        const utcString = isoString.endsWith("Z") ? isoString : isoString + "Z";
+        const date = new Date(utcString);
+
         return date.toLocaleString('en-US', {
             timeZone: 'America/New_York',
             year: 'numeric',
@@ -1470,6 +1473,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
             hour12: true
         });
     }
+
 
     /**
      * Get status badge HTML based on message status

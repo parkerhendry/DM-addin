@@ -1375,7 +1375,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                             <div class="row align-items-end">
                                 <div class="col-md-6">
                                     <label for="expiryDate-${device.serialNumber}" class="form-label fw-semibold">
-                                        Expiration Date & Time
+                                        Expiration Date & Time (EST)
                                     </label>
                                     <input type="datetime-local" 
                                         class="form-control" 

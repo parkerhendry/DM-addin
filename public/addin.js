@@ -1406,6 +1406,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
             
             queues.forEach(queue => {
                 const expiryDate = formatDateTimeEST(queue.ExpiryDateUTC);
+                console.log("Original expiry date:", queue.ExpiryDateUTC, "Formatted:", expiryDate);
                 const statusBadge = getStatusBadge(queue.MessageStatus);
                 
                 recoveryHtml += `

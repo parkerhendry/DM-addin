@@ -386,6 +386,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 if (response && response.SystemParameters) {
                     device.systemParameters = response.SystemParameters;
                     device.deviceType = deviceType;
+                    device.recoveryModeStatus = response.RecoveryMode; // Add recovery mode status
                 }
             } catch (error) {
                 console.warn(`Could not get system parameters for device ${device.serialNumber}:`, error);
@@ -393,7 +394,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
         }
         
         const devicesWithParams = digitalMatterDevices.filter(d => d.systemParameters);
-        showAlert(`Retrieved parameters for ${devicesWithParams.length} devices`, 'success');
+        const devicesInRecovery = digitalMatterDevices.filter(d => d.recoveryModeStatus === true);
+        showAlert(`Retrieved parameters for ${devicesWithParams.length} devices (${devicesInRecovery.length} in recovery mode)`, 'success');
     }
 
     /**
@@ -1304,8 +1306,9 @@ geotab.addin.digitalMatterDeviceManager = function () {
         showRecoveryModeUI(device, recoveryModeQueues);
     }
 
+
     /**
-     * Show recovery mode UI
+     * Show recovery mode UI - Modified to handle current recovery mode status
      */
     function showRecoveryModeUI(device, queues) {
         // Find the device card
@@ -1326,6 +1329,9 @@ geotab.addin.digitalMatterDeviceManager = function () {
         defaultExpiry.setHours(defaultExpiry.getHours() + 1);
         const defaultExpiryString = defaultExpiry.toISOString().slice(0, 16); // Format for datetime-local input
         
+        // Check if device is currently in recovery mode
+        const isInRecoveryMode = device.recoveryModeStatus === true;
+        
         let recoveryHtml = `
             <div id="recovery-${device.serialNumber}" class="recovery-mode mt-3">
                 <div class="recovery-container">
@@ -1336,6 +1342,15 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                     <i class="fas fa-life-ring me-2"></i>Recovery Mode
                                 </h5>
                                 <p class="text-muted mb-0">${device.geotabName || device.serialNumber}</p>
+                                ${isInRecoveryMode ? `
+                                    <span class="badge bg-danger mt-1">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Currently in Recovery Mode
+                                    </span>
+                                ` : `
+                                    <span class="badge bg-success mt-1">
+                                        <i class="fas fa-check-circle me-1"></i>Normal Operation
+                                    </span>
+                                `}
                             </div>
                             <button class="btn btn-outline-secondary btn-sm" onclick="hideRecoveryMode('${device.serialNumber}')">
                                 <i class="fas fa-times"></i>
@@ -1354,12 +1369,19 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                         class="form-control" 
                                         id="expiryDate-${device.serialNumber}" 
                                         value="${defaultExpiryString}"
-                                        min="${new Date().toISOString().slice(0, 16)}">
+                                        min="${new Date().toISOString().slice(0, 16)}"
+                                        ${isInRecoveryMode ? 'disabled' : ''}>
                                 </div>
                                 <div class="col-md-6">
-                                    <button class="btn btn-warning" onclick="triggerRecoveryMode('${device.serialNumber}')">
-                                        <i class="fas fa-play me-2"></i>Trigger Recovery Mode
-                                    </button>
+                                    ${isInRecoveryMode ? `
+                                        <button class="btn btn-danger" onclick="cancelCurrentRecoveryMode('${device.serialNumber}')">
+                                            <i class="fas fa-stop me-2"></i>Cancel Recovery Mode
+                                        </button>
+                                    ` : `
+                                        <button class="btn btn-warning" onclick="triggerRecoveryMode('${device.serialNumber}')">
+                                            <i class="fas fa-play me-2"></i>Trigger Recovery Mode
+                                        </button>
+                                    `}
                                 </div>
                             </div>
                         </div>
@@ -1374,7 +1396,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                     <thead class="table-warning">
                                         <tr>
                                             <th>Status</th>
-                                            <th>Expiry Date</th>
+                                            <th>Expiry Date (EST)</th>
                                             <th>Message ID</th>
                                             <th>Action</th>
                                         </tr>
@@ -1383,7 +1405,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
             `;
             
             queues.forEach(queue => {
-                const expiryDate = formatDateTime(queue.ExpiryDateUTC);
+                const expiryDate = formatDateTimeEST(queue.ExpiryDateUTC);
                 const statusBadge = getStatusBadge(queue.MessageStatus);
                 
                 recoveryHtml += `
@@ -1433,11 +1455,12 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
-     * Format datetime from UTC ISO string to readable format
+     * Format datetime from UTC ISO string to EST
      */
-    function formatDateTime(isoString) {
+    function formatDateTimeEST(isoString) {
         const date = new Date(isoString);
-        return date.toLocaleString(undefined, {
+        return date.toLocaleString('en-US', {
+            timeZone: 'America/New_York',
             year: 'numeric',
             month: 'short',
             day: 'numeric',
@@ -1462,6 +1485,70 @@ geotab.addin.digitalMatterDeviceManager = function () {
         const badgeClass = statusMap[status] || 'bg-info';
         return `<span class="badge ${badgeClass}">${status}</span>`;
     }
+
+    /**
+     * Cancel current recovery mode for a device
+     */
+    window.cancelCurrentRecoveryMode = async function(serialNumber) {
+        try {
+            showAlert('Cancelling current recovery mode...', 'info');
+            
+            // Create expiry date 1 year from now
+            const expiryDate = new Date();
+            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+            
+            const requestBody = {
+                MessageType: 3,
+                CANAddress: 4294967295,
+                Data: [1], // Cancel recovery mode
+                ExpiryDateUTC: expiryDate.toISOString()
+            };
+            
+            await makeDigitalMatterCall(`/AsyncMessaging/Send?serial=${serialNumber}`, 'POST', requestBody);
+            
+            showAlert('Recovery mode cancelled successfully!', 'success');
+            
+            // Update the device's recovery mode status and queues
+            const device = digitalMatterDevices.find(d => d.serialNumber === serialNumber);
+            if (device) {
+                try {
+                    // Refresh device parameters to get updated recovery mode status
+                    const deviceType = PRODUCT_ID_TO_DEVICE_TYPE[device.productId];
+                    if (deviceType) {
+                        const response = await makeDigitalMatterCall(
+                            `/v1/${deviceType}/Get?product=${device.productId}&id=${device.serialNumber}`
+                        );
+                        if (response && response.SystemParameters) {
+                            device.systemParameters = response.SystemParameters;
+                            device.recoveryModeStatus = response.RecoveryMode;
+                        }
+                    }
+                    
+                    // Refresh recovery mode queues
+                    const queueResponse = await makeDigitalMatterCall(`/AsyncMessaging/Get?serial=${serialNumber}`);
+                    const recoveryModeQueues = queueResponse.filter(item => 
+                        item.MessageType === 3 && item.CANAddress === 4294967295
+                    );
+                    device.recoveryModeQueues = recoveryModeQueues;
+                    
+                    // Re-render devices to update badge count
+                    renderDevices();
+                } catch (error) {
+                    console.warn('Could not refresh device status after cancelling recovery mode');
+                }
+            }
+            
+            // Refresh the recovery mode display
+            setTimeout(() => {
+                hideRecoveryMode(serialNumber);
+                viewRecoveryMode(serialNumber);
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error cancelling current recovery mode:', error);
+            showAlert('Error cancelling recovery mode: ' + error.message, 'danger');
+        }
+    };
 
     /**
      * Trigger recovery mode for a device
@@ -1504,12 +1591,25 @@ geotab.addin.digitalMatterDeviceManager = function () {
             
             showAlert(`Recovery mode triggered successfully! Expires: ${expiryDate.toLocaleString()}`, 'success');
             
-            // Update the device's recovery mode queues
+            // Update the device's recovery mode status and queues
             const device = digitalMatterDevices.find(d => d.serialNumber === serialNumber);
             if (device) {
                 try {
-                    const response = await makeDigitalMatterCall(`/AsyncMessaging/Get?serial=${serialNumber}`);
-                    const recoveryModeQueues = response.filter(item => 
+                    // Refresh device parameters to get updated recovery mode status
+                    const deviceType = PRODUCT_ID_TO_DEVICE_TYPE[device.productId];
+                    if (deviceType) {
+                        const response = await makeDigitalMatterCall(
+                            `/v1/${deviceType}/Get?product=${device.productId}&id=${device.serialNumber}`
+                        );
+                        if (response && response.SystemParameters) {
+                            device.systemParameters = response.SystemParameters;
+                            device.recoveryModeStatus = response.RecoveryMode;
+                        }
+                    }
+                    
+                    // Refresh recovery mode queues
+                    const queueResponse = await makeDigitalMatterCall(`/AsyncMessaging/Get?serial=${serialNumber}`);
+                    const recoveryModeQueues = queueResponse.filter(item => 
                         item.MessageType === 3 && item.CANAddress === 4294967295
                     );
                     device.recoveryModeQueues = recoveryModeQueues;
@@ -1517,7 +1617,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                     // Re-render devices to update badge count
                     renderDevices();
                 } catch (error) {
-                    console.warn('Could not refresh recovery mode queues after triggering');
+                    console.warn('Could not refresh device status after triggering recovery mode');
                 }
             }
             

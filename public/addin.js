@@ -397,7 +397,33 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
-     * Load all device data
+     * Get recovery mode queues for each device
+     */
+    async function enrichWithRecoveryModeQueues() {
+        showAlert('Getting recovery mode queues for devices...', 'info');
+        
+        for (const device of digitalMatterDevices) {
+            try {
+                const response = await makeDigitalMatterCall(`/AsyncMessaging/Get?serial=${device.serialNumber}`);
+                
+                // Filter for recovery mode messages (MessageType = 3 and CANAddress = 4294967295)
+                const recoveryModeQueues = response.filter(item => 
+                    item.MessageType === 3 && item.CANAddress === 4294967295
+                );
+                
+                device.recoveryModeQueues = recoveryModeQueues;
+            } catch (error) {
+                console.warn(`Could not get recovery mode queues for device ${device.serialNumber}:`, error);
+                device.recoveryModeQueues = [];
+            }
+        }
+        
+        const devicesWithQueues = digitalMatterDevices.filter(d => d.recoveryModeQueues && d.recoveryModeQueues.length > 0);
+        showAlert(`Retrieved recovery mode queues for ${digitalMatterDevices.length} devices (${devicesWithQueues.length} have active queues)`, 'success');
+    }
+
+    /**
+     * Load all device data - Modified to include recovery mode queues
      */
     async function loadAllDeviceData() {
         try {
@@ -431,7 +457,10 @@ geotab.addin.digitalMatterDeviceManager = function () {
             // Step 5: Get system parameters
             await enrichWithSystemParameters();
             
-            // Step 6: Render devices
+            // Step 6: Get recovery mode queues
+            await enrichWithRecoveryModeQueues();
+            
+            // Step 7: Render devices
             filteredDevices = [...digitalMatterDevices];
             renderDevices();
             
@@ -1269,23 +1298,10 @@ geotab.addin.digitalMatterDeviceManager = function () {
      * Show recovery mode interface inline
      */
     async function showRecoveryModeInline(device) {
-        try {
-            // Get current recovery mode queues
-            const response = await makeDigitalMatterCall(`/AsyncMessaging/Get?serial=${device.serialNumber}`);
-            
-            // Filter for recovery mode messages (MessageType = 3 and CANAddress = 4294967295)
-            const recoveryModeQueues = response.filter(item => 
-                item.MessageType === 3 && item.CANAddress === 4294967295
-            );
-            
-            showRecoveryModeUI(device, recoveryModeQueues);
-            
-        } catch (error) {
-            console.error('Error getting recovery mode queues:', error);
-            showAlert('Error loading recovery mode queues: ' + error.message, 'danger');
-            // Show UI with empty queues in case of error
-            showRecoveryModeUI(device, []);
-        }
+        // Use pre-loaded recovery mode queues instead of making an API call
+        const recoveryModeQueues = device.recoveryModeQueues || [];
+        
+        showRecoveryModeUI(device, recoveryModeQueues);
     }
 
     /**
@@ -1439,6 +1455,23 @@ geotab.addin.digitalMatterDeviceManager = function () {
             
             showAlert('Recovery mode triggered successfully!', 'success');
             
+            // Update the device's recovery mode queues
+            const device = digitalMatterDevices.find(d => d.serialNumber === serialNumber);
+            if (device) {
+                try {
+                    const response = await makeDigitalMatterCall(`/AsyncMessaging/Get?serial=${serialNumber}`);
+                    const recoveryModeQueues = response.filter(item => 
+                        item.MessageType === 3 && item.CANAddress === 4294967295
+                    );
+                    device.recoveryModeQueues = recoveryModeQueues;
+                    
+                    // Re-render devices to update badge count
+                    renderDevices();
+                } catch (error) {
+                    console.warn('Could not refresh recovery mode queues after triggering');
+                }
+            }
+            
             // Refresh the recovery mode display
             setTimeout(() => {
                 hideRecoveryMode(serialNumber);
@@ -1452,7 +1485,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
     };
 
     /**
-     * Cancel a recovery mode queue
+     * Cancel a recovery mode queue - Modified to refresh local data
      */
     window.cancelRecoveryMode = async function(serialNumber, messageId) {
         try {
@@ -1461,6 +1494,23 @@ geotab.addin.digitalMatterDeviceManager = function () {
             await makeDigitalMatterCall(`/AsyncMessaging/Cancel?serial=${serialNumber}&id=${messageId}`);
             
             showAlert('Recovery mode queue cancelled successfully!', 'success');
+            
+            // Update the device's recovery mode queues
+            const device = digitalMatterDevices.find(d => d.serialNumber === serialNumber);
+            if (device) {
+                try {
+                    const response = await makeDigitalMatterCall(`/AsyncMessaging/Get?serial=${serialNumber}`);
+                    const recoveryModeQueues = response.filter(item => 
+                        item.MessageType === 3 && item.CANAddress === 4294967295
+                    );
+                    device.recoveryModeQueues = recoveryModeQueues;
+                    
+                    // Re-render devices to update badge count
+                    renderDevices();
+                } catch (error) {
+                    console.warn('Could not refresh recovery mode queues after cancelling');
+                }
+            }
             
             // Refresh the recovery mode display
             setTimeout(() => {

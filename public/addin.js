@@ -1416,7 +1416,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                             <div class="d-flex align-items-start">
                                 <i class="fas fa-info-circle me-2 mt-1"></i>
                                 <div>
-                                    <strong>Note:</strong> Queue changes will not take effect until the device updates again. The device must connect to receive new commands.
+                                    <strong>Note:</strong> Queue changes will not take effect until the device updates again.
                                 </div>
                             </div>
                         </div>
@@ -1466,9 +1466,6 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                                 <span class="${actionClass}">
                                                     <i class="${actionIcon} me-2"></i>${pendingAction}
                                                 </span>
-                                                <div class="text-muted small mt-1">
-                                                    <code class="small">${queue.MessageId}</code>
-                                                </div>
                                             </td>
                                             <td>
                                                 <button class="btn btn-danger btn-sm" 

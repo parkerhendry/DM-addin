@@ -1361,7 +1361,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                     </div>
                     
                     <!-- Battery Usage Warning -->
-                    <div class="alert alert-warning mb-4">
+                    <div class="alert alert-danger mb-4">
                         <div class="d-flex align-items-start">
                             <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
                             <div>
@@ -1375,7 +1375,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                             <div class="row align-items-end">
                                 <div class="col-md-6">
                                     <label for="expiryDate-${device.serialNumber}" class="form-label fw-semibold">
-                                        Expiry Date & Time
+                                        Expiration Date & Time
                                     </label>
                                     <input type="datetime-local" 
                                         class="form-control" 
@@ -1428,7 +1428,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                     <thead class="table-warning">
                                         <tr>
                                             <th>Status</th>
-                                            <th>Expiry Date (EST)</th>
+                                            <th>Expiration Date (EST)</th>
                                             <th>Pending Action</th>
                                             <th>Controls</th>
                                         </tr>
@@ -1616,13 +1616,13 @@ geotab.addin.digitalMatterDeviceManager = function () {
             // Get the expiry date from the input
             const expiryInput = document.getElementById(`expiryDate-${serialNumber}`);
             if (!expiryInput) {
-                showAlert('Error: Could not find expiry date input', 'danger');
+                showAlert('Error: Could not find expiration date input', 'danger');
                 return;
             }
             
             const expiryValue = expiryInput.value;
             if (!expiryValue) {
-                showAlert('Please select an expiry date and time', 'warning');
+                showAlert('Please select an expiration date and time', 'warning');
                 return;
             }
             
@@ -1631,7 +1631,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
             const now = new Date();
             
             if (expiryDate <= now) {
-                showAlert('Expiry date must be in the future', 'warning');
+                showAlert('Expiration date must be in the future', 'warning');
                 return;
             }
             

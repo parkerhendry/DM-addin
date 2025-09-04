@@ -895,22 +895,26 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
-     * Apply template settings to parameter inputs
+     * Apply template settings to parameter inputs - FIXED VERSION
      */
     function applyParameterTemplate(templateId, deviceSerial, deviceType) {
         const template = PARAMETER_TEMPLATES[templateId];
+        
         if (!template || templateId === 'custom') {
             // Enable all inputs for custom mode
             enableParameterInputs(deviceSerial, true);
             return;
         }
         
-        // Disable all parameter inputs
+        // Disable all parameter inputs FIRST
         enableParameterInputs(deviceSerial, false);
         
-        // Apply template settings
+        // Apply template settings WITHOUT triggering change events
         const paramsContainer = document.getElementById(`params-${deviceSerial}`);
         if (!paramsContainer) return;
+        
+        // Set a flag to prevent markParameterAsChanged from switching to custom
+        paramsContainer.setAttribute('data-applying-template', 'true');
         
         Object.entries(template.settings).forEach(([paramKey, paramValue]) => {
             const input = paramsContainer.querySelector(`[data-param="${paramKey}"]`);
@@ -927,29 +931,67 @@ geotab.addin.digitalMatterDeviceManager = function () {
                     input.value = paramValue;
                 }
                 
-                // Mark as changed if different from original
+                // Mark as changed if different from original, but don't switch template
                 const originalValue = input.getAttribute('data-original-value') || input.defaultValue;
                 if (input.value !== originalValue) {
-                    markParameterAsChanged(input);
+                    input.classList.add('changed');
+                    
+                    // Enable save button
+                    const saveButton = document.getElementById(`save-${deviceSerial}`);
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                    }
+                    
+                    // Show changes indicator
+                    const changesIndicator = document.getElementById(`changes-${deviceSerial}`);
+                    if (changesIndicator) {
+                        changesIndicator.style.display = 'block';
+                    }
+                    
+                    // Add visual feedback to the parameter field
+                    const parameterField = input.closest('.parameter-field');
+                    if (parameterField) {
+                        parameterField.classList.add('field-changed');
+                    }
                 }
             }
         });
+        
+        // Remove the flag after applying template
+        setTimeout(() => {
+            paramsContainer.removeAttribute('data-applying-template');
+        }, 100);
     }
 
     /**
-     * Enable or disable parameter inputs
+     * Enable or disable parameter inputs - FIXED VERSION
      */
     function enableParameterInputs(deviceSerial, enable) {
         const paramsContainer = document.getElementById(`params-${deviceSerial}`);
         if (!paramsContainer) return;
         
+        // Select all parameter inputs but NOT the template selector
         const inputs = paramsContainer.querySelectorAll('.parameter-input:not(.template-selector)');
+        
         inputs.forEach(input => {
             input.disabled = !enable;
+            
             if (enable) {
                 input.classList.remove('template-disabled');
+                // Re-enable pointer events and remove visual disabled state
+                input.style.pointerEvents = '';
+                input.style.backgroundColor = '';
+                input.style.borderColor = '';
+                input.style.color = '';
+                input.style.opacity = '';
             } else {
                 input.classList.add('template-disabled');
+                // Apply disabled styling
+                input.style.pointerEvents = 'none';
+                input.style.backgroundColor = '#f8f9fa';
+                input.style.borderColor = '#e9ecef';
+                input.style.color = '#6c757d';
+                input.style.opacity = '0.65';
             }
         });
     }
@@ -1119,22 +1161,34 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
-     * Handle template selection change
+     * Handle template selection change - FIXED VERSION
      */
     window.handleTemplateChange = function(selectElement) {
         const templateId = selectElement.value;
         const deviceSerial = selectElement.dataset.device;
         const deviceType = selectElement.dataset.deviceType;
         
+        // Ensure the dropdown shows the correct value
+        selectElement.value = templateId;
+        
+        // Apply the template
         applyParameterTemplate(templateId, deviceSerial, deviceType);
     };
 
     /**
-     * Mark parameter as changed - Enhanced version with template awareness
+     * Mark parameter as changed - FIXED VERSION with template awareness
      */
     window.markParameterAsChanged = function(input) {
         // Don't mark template selector as changed
         if (input.classList.contains('template-selector')) {
+            return;
+        }
+        
+        // Check if we're currently applying a template
+        const paramsContainer = input.closest('.device-parameters');
+        if (paramsContainer && paramsContainer.getAttribute('data-applying-template') === 'true') {
+            // Don't switch to custom mode when applying template
+            input.classList.add('changed');
             return;
         }
         
@@ -1159,9 +1213,11 @@ geotab.addin.digitalMatterDeviceManager = function () {
             parameterField.classList.add('field-changed');
         }
         
-        // If any parameter changes, switch template to "Custom"
+        // Only switch to custom if user manually changed a parameter (not during template application)
         const templateSelector = document.querySelector(`[data-device="${deviceSerial}"].template-selector`);
         if (templateSelector && templateSelector.value !== 'custom') {
+            // User manually changed a parameter while a template was selected
+            // Switch to custom mode and enable all inputs
             templateSelector.value = 'custom';
             enableParameterInputs(deviceSerial, true);
         }

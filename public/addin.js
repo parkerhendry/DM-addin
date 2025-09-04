@@ -887,6 +887,19 @@ geotab.addin.digitalMatterDeviceManager = function () {
         // Insert the parameters after the card
         targetCard.insertAdjacentHTML('afterend', parametersHtml);
         
+        // Detect and set initial template state
+        const detectedTemplate = detectCurrentTemplate(device);
+        const templateSelector = document.querySelector(`[data-device="${device.serialNumber}"].template-selector`);
+        if (templateSelector) {
+            templateSelector.value = detectedTemplate;
+            
+            // Show/hide warning and set input states based on detected template
+            toggleCustomWarning(device.serialNumber, detectedTemplate === 'custom');
+            if (detectedTemplate !== 'custom') {
+                enableParameterInputs(device.serialNumber, false);
+            }
+        }
+        
         // Scroll to the parameters section
         const paramsElement = document.getElementById(`params-${device.serialNumber}`);
         if (paramsElement) {

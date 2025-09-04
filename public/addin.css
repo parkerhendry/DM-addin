@@ -913,13 +913,14 @@ body.status-bar-active .header-section {
     background-color: #f8f9fa !important;
     border-color: #e9ecef !important;
     color: #6c757d !important;
-    opacity: 0.7;
-    cursor: not-allowed;
+    opacity: 0.65 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
 }
 
 .parameter-input.template-disabled:focus {
-    box-shadow: none;
-    border-color: #e9ecef;
+    box-shadow: none !important;
+    border-color: #e9ecef !important;
 }
 
 /* Parameter field styling when disabled */

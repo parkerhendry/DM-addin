@@ -912,35 +912,54 @@ geotab.addin.digitalMatterDeviceManager = function () {
      */
     function detectCurrentTemplate(device) {
         if (!device.systemParameters || !PARAMETER_TEMPLATES) {
+            console.log("No systemParameters or PARAMETER_TEMPLATES. Returning 'custom'");
             return 'custom';
         }
-        
+
         // Check each template to see if it matches current parameters
         for (const [templateId, template] of Object.entries(PARAMETER_TEMPLATES)) {
             if (templateId === 'custom') continue;
-            
+
+            console.log(`\nChecking template: ${templateId}`);
             let matches = true;
+
             for (const [paramKey, templateValue] of Object.entries(template.settings)) {
+                console.log(`  Looking for paramKey: ${paramKey}, expected value: ${templateValue}`);
+
                 // Find the parameter in device data
                 let currentValue = null;
                 for (const [sectionId, sectionData] of Object.entries(device.systemParameters)) {
                     if (sectionData[paramKey] !== undefined) {
                         currentValue = sectionData[paramKey].toString();
+                        console.log(`    Found in section '${sectionId}': currentValue = ${currentValue}`);
                         break;
                     }
                 }
-                
-                if (currentValue === null || currentValue !== templateValue.toString()) {
+
+                if (currentValue === null) {
+                    console.log(`    ❌ paramKey '${paramKey}' not found in device.systemParameters`);
                     matches = false;
                     break;
                 }
+
+                if (currentValue !== templateValue.toString()) {
+                    console.log(`    ❌ Value mismatch for '${paramKey}': expected '${templateValue}', got '${currentValue}'`);
+                    matches = false;
+                    break;
+                } else {
+                    console.log(`    ✅ Match for '${paramKey}': '${currentValue}'`);
+                }
             }
-            
+
             if (matches) {
+                console.log(`✅ Template '${templateId}' matches!`);
                 return templateId;
+            } else {
+                console.log(`Template '${templateId}' did not match.`);
             }
         }
-        
+
+        console.log("No templates matched. Returning 'custom'");
         return 'custom';
     }
 

@@ -908,6 +908,57 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
+     * Detect which template matches current device parameters
+     */
+    function detectCurrentTemplate(device) {
+        if (!device.systemParameters || !PARAMETER_TEMPLATES) {
+            return 'custom';
+        }
+        
+        // Check each template to see if it matches current parameters
+        for (const [templateId, template] of Object.entries(PARAMETER_TEMPLATES)) {
+            if (templateId === 'custom') continue;
+            
+            let matches = true;
+            for (const [paramKey, templateValue] of Object.entries(template.settings)) {
+                // Find the parameter in device data
+                let currentValue = null;
+                for (const [sectionId, sectionData] of Object.entries(device.systemParameters)) {
+                    if (sectionData[paramKey] !== undefined) {
+                        currentValue = sectionData[paramKey].toString();
+                        break;
+                    }
+                }
+                
+                if (currentValue === null || currentValue !== templateValue.toString()) {
+                    matches = false;
+                    break;
+                }
+            }
+            
+            if (matches) {
+                return templateId;
+            }
+        }
+        
+        return 'custom';
+    }
+
+    /**
+     * Toggle custom template warning visibility
+     */
+    function toggleCustomWarning(deviceSerial, show) {
+        const warning = document.getElementById(`custom-warning-${deviceSerial}`);
+        if (warning) {
+            if (show) {
+                warning.classList.remove('d-none');
+            } else {
+                warning.classList.add('d-none');
+            }
+        }
+    }
+
+    /**
      * Apply template settings to parameter inputs - FIXED VERSION
      */
     function applyParameterTemplate(templateId, deviceSerial, deviceType) {

@@ -133,6 +133,68 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
     };
 
+    /**
+     * Template configurations for different tracking modes
+     */
+    const PARAMETER_TEMPLATES = {
+        'daily-update': {
+            name: 'Daily Update',
+            description: 'Device checks in once per day, no movement tracking',
+            settings: {
+                'bPeriodicUploadHrMin': '1440',
+                'bTrackingMode': '1', // Periodic Update for YabbyEdge, or '2' for others
+                'bInTripUploadMinSec': '3600',
+                'bInTripLogMinSec': '3600',
+                'bMoveLogMinSec': '300',
+                'bMoveUploadMinSec': '3600',
+                'fUploadOnStart': '0',
+                'fUploadOnEnd': '0',
+                'fUploadDuring': '0',
+                'fDisableMoveLogs': '1',
+                'fEnableMoveUploads': '0'
+            }
+        },
+        'start-stop': {
+            name: 'Start + Stop',
+            description: 'Tracks trip start and end points only',
+            settings: {
+                'bPeriodicUploadHrMin': '1440',
+                'bTrackingMode': '0', // Movement based
+                'bInTripUploadMinSec': '3600',
+                'bInTripLogMinSec': '3600',
+                'bMoveLogMinSec': '3600',
+                'bMoveUploadMinSec': '3600',
+                'fUploadOnStart': '1',
+                'fUploadOnEnd': '1',
+                'fUploadDuring': '0',
+                'fDisableMoveLogs': '1',
+                'fEnableMoveUploads': '0'
+            }
+        },
+        'movement-tracking': {
+            name: 'Movement Tracking',
+            description: 'Full trip tracking with regular updates during movement',
+            settings: {
+                'bPeriodicUploadHrMin': '1440',
+                'bTrackingMode': '0', // Movement based
+                'bInTripUploadMinSec': '1800',
+                'bInTripLogMinSec': '300',
+                'bMoveLogMinSec': '300',
+                'bMoveUploadMinSec': '1800',
+                'fUploadOnStart': '1',
+                'fUploadOnEnd': '1',
+                'fUploadDuring': '1',
+                'fDisableMoveLogs': '0',
+                'fEnableMoveUploads': '1'
+            }
+        },
+        'custom': {
+            name: 'Custom',
+            description: 'Configure each parameter individually',
+            settings: {}
+        }
+    };
+
     // Add this constant after the existing CLIENT_MAPPING constant:
     const PRODUCT_ID_TO_DEVICE_TYPE = {
         '87': 'Oyster34G',
@@ -694,6 +756,28 @@ geotab.addin.digitalMatterDeviceManager = function () {
                         </div>
                     </div>
                     
+                    <!-- Template Selector -->
+                    <div class="template-selector-section mb-4">
+                        <div class="template-header mb-3">
+                            <h6 class="text-secondary mb-2">
+                                <i class="fas fa-palette me-2"></i>Configuration Template
+                            </h6>
+                            <p class="text-muted small mb-3">Choose a preset configuration or customize individual parameters.</p>
+                        </div>
+                        
+                        <div class="template-selection mb-3">
+                            <select class="form-select template-selector" 
+                                    data-device="${device.serialNumber}"
+                                    data-device-type="${device.deviceType}"
+                                    onchange="handleTemplateChange(this)">
+                                <option value="custom">Custom - Configure each parameter individually</option>
+                                <option value="daily-update">Daily Update - Device checks in once per day, no movement tracking</option>
+                                <option value="start-stop">Start + Stop - Tracks trip start and end points only</option>
+                                <option value="movement-tracking">Movement Tracking - Full trip tracking with regular updates</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <div class="parameters-content">
         `;
         
@@ -741,6 +825,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                     data-section="${sectionId}"
                                     data-param="${paramKey}"
                                     data-device="${device.serialNumber}"
+                                    data-original-value="${paramValue}"
                                     onchange="markParameterAsChanged(this)"
                                     title="${paramDescription}">
                                 ${optionsHtml}
@@ -759,6 +844,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                 data-section="${sectionId}"
                                 data-param="${paramKey}"
                                 data-device="${device.serialNumber}"
+                                data-original-value="${paramValue}"
                                 onchange="markParameterAsChanged(this)"
                                 title="${paramDescription}">
                             <div class="parameter-description">${formattedParamDesc}</div>
@@ -811,7 +897,69 @@ geotab.addin.digitalMatterDeviceManager = function () {
         }
     }
 
-    // Replace the existing generateDropdownOptions function:
+    /**
+     * Apply template settings to parameter inputs
+     */
+    function applyParameterTemplate(templateId, deviceSerial, deviceType) {
+        const template = PARAMETER_TEMPLATES[templateId];
+        if (!template || templateId === 'custom') {
+            // Enable all inputs for custom mode
+            enableParameterInputs(deviceSerial, true);
+            return;
+        }
+        
+        // Disable all parameter inputs
+        enableParameterInputs(deviceSerial, false);
+        
+        // Apply template settings
+        const paramsContainer = document.getElementById(`params-${deviceSerial}`);
+        if (!paramsContainer) return;
+        
+        Object.entries(template.settings).forEach(([paramKey, paramValue]) => {
+            const input = paramsContainer.querySelector(`[data-param="${paramKey}"]`);
+            if (input) {
+                // Adjust tracking mode based on device type
+                if (paramKey === 'bTrackingMode' && deviceType === 'YabbyEdge') {
+                    // YabbyEdge has different tracking mode values
+                    if (paramValue === '0') {
+                        input.value = '0'; // Movement based
+                    } else if (paramValue === '1' || paramValue === '2') {
+                        input.value = '1'; // Periodic Update
+                    }
+                } else {
+                    input.value = paramValue;
+                }
+                
+                // Mark as changed if different from original
+                const originalValue = input.getAttribute('data-original-value') || input.defaultValue;
+                if (input.value !== originalValue) {
+                    markParameterAsChanged(input);
+                }
+            }
+        });
+    }
+
+    /**
+     * Enable or disable parameter inputs
+     */
+    function enableParameterInputs(deviceSerial, enable) {
+        const paramsContainer = document.getElementById(`params-${deviceSerial}`);
+        if (!paramsContainer) return;
+        
+        const inputs = paramsContainer.querySelectorAll('.parameter-input:not(.template-selector)');
+        inputs.forEach(input => {
+            input.disabled = !enable;
+            if (enable) {
+                input.classList.remove('template-disabled');
+            } else {
+                input.classList.add('template-disabled');
+            }
+        });
+    }
+
+    /**
+     * Generate dropdown options based on parameter type - UPDATED VERSION
+     */
     function generateDropdownOptions(paramKey, currentValue, deviceType) {
         let options = [];
         
@@ -892,36 +1040,23 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 }
                 break;
                 
+            // UPDATED: Limited movement logging and upload options
             case 'bInTripUploadMinSec':
             case 'bInTripLogMinSec':
             case 'bMoveUploadMinSec':
-                // 1 minute to 60 minutes (in seconds)
-                for (let minutes = 1; minutes <= 60; minutes++) {
-                    const seconds = minutes * 60;
-                    options.push({ 
-                        value: seconds.toString(), 
-                        label: `${seconds} sec (${minutes} min)` 
-                    });
-                }
-                break;
-                
             case 'bMoveLogMinSec':
-                // 30 seconds to 30 minutes (in seconds)
-                const moveLogOptions = [30, 60, 120, 180, 300, 600, 900, 1200, 1500, 1800];
-                moveLogOptions.forEach(seconds => {
-                    if (seconds >= 60) {
-                        const minutes = Math.floor(seconds / 60);
-                        const remainingSeconds = seconds % 60;
-                        const label = remainingSeconds > 0 ? 
-                            `${seconds} sec (${minutes}m ${remainingSeconds}s)` : 
-                            `${seconds} sec (${minutes} min)`;
-                        options.push({ value: seconds.toString(), label });
-                    } else {
-                        options.push({ 
-                            value: seconds.toString(), 
-                            label: `${seconds} sec` 
-                        });
-                    }
+                const limitedOptions = [
+                    { minutes: 5, seconds: 300 },
+                    { minutes: 15, seconds: 900 },
+                    { minutes: 30, seconds: 1800 },
+                    { minutes: 60, seconds: 3600 }
+                ];
+                
+                limitedOptions.forEach(option => {
+                    options.push({ 
+                        value: option.seconds.toString(), 
+                        label: `${option.seconds} sec (${option.minutes} min)` 
+                    });
                 });
                 break;
                 
@@ -987,9 +1122,25 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
-     * Mark parameter as changed - Enhanced version with visual feedback
+     * Handle template selection change
+     */
+    window.handleTemplateChange = function(selectElement) {
+        const templateId = selectElement.value;
+        const deviceSerial = selectElement.dataset.device;
+        const deviceType = selectElement.dataset.deviceType;
+        
+        applyParameterTemplate(templateId, deviceSerial, deviceType);
+    };
+
+    /**
+     * Mark parameter as changed - Enhanced version with template awareness
      */
     window.markParameterAsChanged = function(input) {
+        // Don't mark template selector as changed
+        if (input.classList.contains('template-selector')) {
+            return;
+        }
+        
         input.classList.add('changed');
         const deviceSerial = input.dataset.device;
         
@@ -1009,6 +1160,13 @@ geotab.addin.digitalMatterDeviceManager = function () {
         const parameterField = input.closest('.parameter-field');
         if (parameterField) {
             parameterField.classList.add('field-changed');
+        }
+        
+        // If any parameter changes, switch template to "Custom"
+        const templateSelector = document.querySelector(`[data-device="${deviceSerial}"].template-selector`);
+        if (templateSelector && templateSelector.value !== 'custom') {
+            templateSelector.value = 'custom';
+            enableParameterInputs(deviceSerial, true);
         }
     };
 

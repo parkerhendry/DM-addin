@@ -886,3 +886,102 @@ body.status-bar-active .header-section {
         margin-bottom: 0;
     }
 }
+
+/* Template selector styling */
+.template-selector-section {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.template-header h6 {
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.template-selector {
+    font-weight: 500;
+}
+
+.template-selector option {
+    padding: 8px;
+}
+
+/* Disabled parameter inputs when using templates */
+.parameter-input.template-disabled {
+    background-color: #f8f9fa !important;
+    border-color: #e9ecef !important;
+    color: #6c757d !important;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.parameter-input.template-disabled:focus {
+    box-shadow: none;
+    border-color: #e9ecef;
+}
+
+/* Parameter field styling when disabled */
+.parameter-field:has(.template-disabled) .parameter-label {
+    color: #6c757d;
+    opacity: 0.8;
+}
+
+.parameter-field:has(.template-disabled) .parameter-description {
+    color: #6c757d;
+    opacity: 0.7;
+}
+
+/* Template indication styling */
+.template-active-indicator {
+    background: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    font-size: 0.875rem;
+    color: #1976d2;
+}
+
+.template-active-indicator i {
+    color: #2196f3;
+}
+
+/* Enhanced parameter grid for better template display */
+.parameters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+@media (max-width: 768px) {
+    .parameters-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Improved visual feedback for changed parameters */
+.parameter-field.field-changed {
+    background: #fff8e1;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+}
+
+.parameter-input.changed {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+/* Template selector focus and hover states */
+.template-selector:hover {
+    border-color: #80bdff;
+}
+
+.template-selector:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}

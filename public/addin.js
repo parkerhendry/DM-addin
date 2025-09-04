@@ -142,7 +142,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
             description: 'Device checks in once per day, no movement tracking',
             settings: {
                 'bPeriodicUploadHrMin': '1440',
-                'bTrackingMode': '1', // Periodic Update for YabbyEdge, or '2' for others
+                // bTrackingMode is handled specially in applyParameterTemplate based on device type
                 'bInTripUploadMinSec': '3600',
                 'bInTripLogMinSec': '3600',
                 'bMoveLogMinSec': '300',

@@ -693,9 +693,6 @@ geotab.addin.digitalMatterDeviceManager = function () {
         showParametersInline(device);
     };
 
-    /**
-     * Generate dropdown options based on parameter type
-     */
     function showParametersInline(device) {
         // Find the device card
         const deviceCards = document.querySelectorAll('.device-card');

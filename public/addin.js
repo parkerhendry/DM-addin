@@ -764,6 +764,11 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                 <option value="movement-tracking">Movement Tracking - Full trip tracking with regular updates</option>
                             </select>
                         </div>
+                        <div id="custom-warning-${device.serialNumber}" class="alert alert-danger d-none mb-3">
+                            <strong>Warning:</strong> Modifying parameters will affect the performance and battery life of devices.
+                            <br>
+                            Please contact Traxxis GPS before modifying if you are unsure about these settings.
+                        </div>
                     </div>
                     
                     <div class="parameters-content">
@@ -1107,6 +1112,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
         // Remove the flag after applying template
         setTimeout(() => {
             paramsContainer.removeAttribute('data-applying-template');
+
+            toggleCustomWarning(deviceSerial, templateId === 'custom');
         }, 100);
     }
 

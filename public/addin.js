@@ -1804,7 +1804,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                         </div>
                         
                         <div class="recovery-queues">
-                            <h6 class="mb-3">Active Recovery Mode Queues (${queues.length})</h6>
+                            <h6 class="mb-3">Actions Queued (${queues.length})</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover">
                                     <thead class="table-warning">
@@ -1871,7 +1871,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
             recoveryHtml += `
                         <div class="recovery-empty text-center py-4">
                             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                            <p class="text-muted mb-0">No active recovery mode queues</p>
+                            <p class="text-muted mb-0">Nothing currently queued</p>
                         </div>
             `;
         }

@@ -640,7 +640,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 <i class="fas fa-mobile-alt fa-4x text-muted mb-4"></i>
                 <h4 class="text-muted">No Digital Matter Devices Found</h4>
                 <p class="text-muted">No Digital Matter devices were found in your Geotab database.</p>
-                <button class="btn btn-primary" onclick="refreshDevices()">
+                <button class="btn btn-primary" id="refreshDevicesBtn" data-loading-text='<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...'
+                    onclick="refreshDevices()">
                     <i class="fas fa-sync-alt me-2"></i>Refresh Devices
                 </button>
             </div>
@@ -1593,9 +1594,21 @@ geotab.addin.digitalMatterDeviceManager = function () {
      * Refresh devices data
      */
     window.refreshDevices = async function() {
+        // Show loading on refresh button if present
+        const btn = document.getElementById('refreshDevicesBtn');
+        let originalHtml;
+        if (btn) {
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = btn.getAttribute('data-loading-text') || originalHtml;
+            btn.disabled = true;
+        }
         digitalMatterDevices = [];
         filteredDevices = [];
         await loadAllDeviceData();
+        if (btn) {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
     };
 
     /**
@@ -1752,12 +1765,16 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                 <div class="col-md-6">
                                     ${isInRecoveryMode ? `
                                         <button class="btn btn-danger" 
+                                                id="cancelCurrentRecoveryBtn-${device.serialNumber}"
+                                                data-loading-text='<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...'
                                                 onclick="cancelCurrentRecoveryMode('${device.serialNumber}')"
                                                 ${hasActiveQueues ? 'disabled' : ''}>
                                             <i class="fas fa-stop me-2"></i>Cancel Recovery Mode
                                         </button>
                                     ` : `
                                         <button class="btn btn-warning" 
+                                                id="triggerRecoveryBtn-${device.serialNumber}"
+                                                data-loading-text='<i class="fas fa-spinner fa-spin me-2"></i>Triggering...'
                                                 onclick="triggerRecoveryMode('${device.serialNumber}')"
                                                 ${hasActiveQueues ? 'disabled' : ''}>
                                             <i class="fas fa-play me-2"></i>Trigger Recovery Mode
@@ -1834,6 +1851,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                             </td>
                                             <td>
                                                 <button class="btn btn-danger btn-sm" 
+                                                        id="cancelQueueBtn-${device.serialNumber}-${queue.MessageId}"
+                                                        data-loading-text='<i class="fas fa-spinner fa-spin me-1"></i>Cancelling...'
                                                         onclick="cancelRecoveryMode('${device.serialNumber}', '${queue.MessageId}')">
                                                     <i class="fas fa-times me-1"></i>Cancel
                                                 </button>
@@ -1913,6 +1932,14 @@ geotab.addin.digitalMatterDeviceManager = function () {
      * Cancel current recovery mode for a device
      */
     window.cancelCurrentRecoveryMode = async function(serialNumber) {
+        // Show loading on button
+        const btn = document.getElementById(`cancelCurrentRecoveryBtn-${serialNumber}`);
+        let originalHtml;
+        if (btn) {
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = btn.getAttribute('data-loading-text') || originalHtml;
+            btn.disabled = true;
+        }
         try {
             showAlert('Cancelling current recovery mode...', 'info');
             
@@ -1970,6 +1997,11 @@ geotab.addin.digitalMatterDeviceManager = function () {
         } catch (error) {
             console.error('Error cancelling current recovery mode:', error);
             showAlert('Error cancelling recovery mode: ' + error.message, 'danger');
+        } finally {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
         }
     };
 
@@ -1977,6 +2009,14 @@ geotab.addin.digitalMatterDeviceManager = function () {
      * Trigger recovery mode for a device
      */
     window.triggerRecoveryMode = async function(serialNumber) {
+        // Show loading on button
+        const btn = document.getElementById(`triggerRecoveryBtn-${serialNumber}`);
+        let originalHtml;
+        if (btn) {
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = btn.getAttribute('data-loading-text') || originalHtml;
+            btn.disabled = true;
+        }
         try {
             // Get the expiry date from the input
             const expiryInput = document.getElementById(`expiryDate-${serialNumber}`);
@@ -2053,6 +2093,11 @@ geotab.addin.digitalMatterDeviceManager = function () {
         } catch (error) {
             console.error('Error triggering recovery mode:', error);
             showAlert('Error triggering recovery mode: ' + error.message, 'danger');
+        } finally {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
         }
     };
 
@@ -2060,6 +2105,14 @@ geotab.addin.digitalMatterDeviceManager = function () {
      * Cancel a recovery mode queue - Modified to refresh local data
      */
     window.cancelRecoveryMode = async function(serialNumber, messageId) {
+        // Show loading on button
+        const btn = document.getElementById(`cancelQueueBtn-${serialNumber}-${messageId}`);
+        let originalHtml;
+        if (btn) {
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = btn.getAttribute('data-loading-text') || originalHtml;
+            btn.disabled = true;
+        }
         try {
             showAlert('Cancelling recovery mode queue...', 'info');
             
@@ -2093,6 +2146,11 @@ geotab.addin.digitalMatterDeviceManager = function () {
         } catch (error) {
             console.error('Error cancelling recovery mode:', error);
             showAlert('Error cancelling recovery mode: ' + error.message, 'danger');
+        } finally {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
         }
     };
 

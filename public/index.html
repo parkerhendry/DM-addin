@@ -32,7 +32,10 @@
                         </div>
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-header-action" onclick="refreshDevices()">
+                        <button class="btn btn-header-action"
+                                id="refreshDevicesBtn"
+                                data-loading-text='<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...'
+                                onclick="refreshDevices()">
                             <i class="fas fa-sync-alt"></i>
                             <span class="btn-text">Refresh</span>
                         </button>

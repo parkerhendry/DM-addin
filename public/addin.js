@@ -1058,6 +1058,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
      */
     function applyParameterTemplate(templateId, deviceSerial, deviceType) {
         const template = PARAMETER_TEMPLATES[templateId];
+
+        toggleCustomWarning(deviceSerial, templateId === 'custom');
         
         if (!template || templateId === 'custom') {
             // Enable all inputs for custom mode
@@ -1112,8 +1114,6 @@ geotab.addin.digitalMatterDeviceManager = function () {
         // Remove the flag after applying template
         setTimeout(() => {
             paramsContainer.removeAttribute('data-applying-template');
-
-            toggleCustomWarning(deviceSerial, templateId === 'custom');
         }, 100);
     }
 

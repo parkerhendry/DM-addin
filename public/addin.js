@@ -948,13 +948,15 @@ geotab.addin.digitalMatterDeviceManager = function () {
             }
 
             // Handle special cases for bTrackingMode
-            if (genericParamName === 'bTrackingMode' && deviceType === 'YabbyEdge') {
-                // YabbyEdge only has 0 (Movement based) and 1 (Periodic Update)
-                // Map template values: 0->0, 1->1, 2->1
-                if (value === '0') {
-                    deviceSettings[deviceSpecificParamName] = '0';
+            if (genericParamName === 'bTrackingMode') {
+                if (deviceType === 'YabbyEdge') {
+                    // YabbyEdge: 0=Movement based, 1=Periodic Update
+                    // Map template values: 0->0, 1->1, 2->1
+                    deviceSettings[deviceSpecificParamName] = (value === '0') ? '0' : '1';
                 } else {
-                    deviceSettings[deviceSpecificParamName] = '1';
+                    // Other devices: 0=GPS Movement, 1=Jostle, 2=Periodic Update
+                    // Use template value as-is
+                    deviceSettings[deviceSpecificParamName] = value;
                 }
             } else {
                 deviceSettings[deviceSpecificParamName] = value;

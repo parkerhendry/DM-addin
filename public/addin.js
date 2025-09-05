@@ -916,6 +916,8 @@ geotab.addin.digitalMatterDeviceManager = function () {
             return 'custom';
         }
 
+        console.log("System Parameters:", device.systemParameters);
+
         // Check each template to see if it matches current parameters
         for (const [templateId, template] of Object.entries(PARAMETER_TEMPLATES)) {
             if (templateId === 'custom') continue;

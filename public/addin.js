@@ -142,16 +142,13 @@ geotab.addin.digitalMatterDeviceManager = function () {
             description: 'Device checks in once per day, no movement tracking',
             settings: {
                 'bPeriodicUploadHrMin': '1440',
-                // bTrackingMode is handled specially in applyParameterTemplate based on device type
+                'bTrackingMode': '1', // Will be mapped appropriately per device
                 'bInTripUploadMinSec': '3600',
                 'bInTripLogMinSec': '3600',
-                'bMoveLogMinSec': '300',
-                'bMoveUploadMinSec': '3600',
                 'fUploadOnStart': '0',
                 'fUploadOnEnd': '0',
                 'fUploadDuring': '0',
-                'fDisableMoveLogs': '1',
-                'fEnableMoveUploads': '0'
+                'fDisableMoveLogs': '1' // Only applies to YabbyEdge
             }
         },
         'start-stop': {
@@ -162,13 +159,10 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 'bTrackingMode': '0', // Movement based
                 'bInTripUploadMinSec': '3600',
                 'bInTripLogMinSec': '3600',
-                'bMoveLogMinSec': '3600',
-                'bMoveUploadMinSec': '3600',
                 'fUploadOnStart': '1',
                 'fUploadOnEnd': '1',
                 'fUploadDuring': '0',
-                'fDisableMoveLogs': '1',
-                'fEnableMoveUploads': '0'
+                'fDisableMoveLogs': '1' // Only applies to YabbyEdge
             }
         },
         'movement-tracking': {
@@ -179,13 +173,10 @@ geotab.addin.digitalMatterDeviceManager = function () {
                 'bTrackingMode': '0', // Movement based
                 'bInTripUploadMinSec': '1800',
                 'bInTripLogMinSec': '300',
-                'bMoveLogMinSec': '300',
-                'bMoveUploadMinSec': '1800',
                 'fUploadOnStart': '1',
                 'fUploadOnEnd': '1',
                 'fUploadDuring': '1',
-                'fDisableMoveLogs': '0',
-                'fEnableMoveUploads': '1'
+                'fDisableMoveLogs': '0' // Only applies to YabbyEdge
             }
         },
         'custom': {
@@ -908,6 +899,72 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
+     * Map device-agnostic parameter names to device-specific parameter names
+     */
+    function getDeviceSpecificParamName(genericParamName, deviceType) {
+        const paramMapping = {
+            'bInTripUploadMinSec': {
+                'YabbyEdge': 'bMoveUploadMinSec',
+                'default': 'bInTripUploadMinSec'
+            },
+            'bInTripLogMinSec': {
+                'YabbyEdge': 'bMoveLogMinSec',
+                'default': 'bInTripLogMinSec'
+            },
+            'fUploadDuring': {
+                'YabbyEdge': 'fEnableMoveUploads',
+                'default': 'fUploadDuring'
+            },
+            'fDisableMoveLogs': {
+                'YabbyEdge': 'fDisableMoveLogs',
+                'default': null // This parameter doesn't exist on non-YabbyEdge devices
+            },
+            'fGpsPowerMode': {
+                'YabbyEdge': null, // This parameter doesn't exist on YabbyEdge devices
+                'default': 'fGpsPowerMode'
+            }
+        };
+
+        const mapping = paramMapping[genericParamName];
+        if (!mapping) {
+            return genericParamName; // No mapping needed, use as-is
+        }
+
+        return mapping[deviceType] || mapping['default'];
+    }
+
+    /**
+     * Get device-specific template settings based on device type
+     */
+    function getDeviceSpecificTemplateSettings(templateSettings, deviceType) {
+        const deviceSettings = {};
+
+        for (const [genericParamName, value] of Object.entries(templateSettings)) {
+            const deviceSpecificParamName = getDeviceSpecificParamName(genericParamName, deviceType);
+            
+            // Skip parameters that don't exist on this device type
+            if (deviceSpecificParamName === null) {
+                continue;
+            }
+
+            // Handle special cases for bTrackingMode
+            if (genericParamName === 'bTrackingMode' && deviceType === 'YabbyEdge') {
+                // YabbyEdge only has 0 (Movement based) and 1 (Periodic Update)
+                // Map template values: 0->0, 1->1, 2->1
+                if (value === '0') {
+                    deviceSettings[deviceSpecificParamName] = '0';
+                } else {
+                    deviceSettings[deviceSpecificParamName] = '1';
+                }
+            } else {
+                deviceSettings[deviceSpecificParamName] = value;
+            }
+        }
+
+        return deviceSettings;
+    }
+
+    /**
      * Detect which template matches current device parameters
      */
     function detectCurrentTemplate(device) {
@@ -917,15 +974,21 @@ geotab.addin.digitalMatterDeviceManager = function () {
         }
 
         console.log("System Parameters:", device.systemParameters);
+        console.log("Device Type:", device.deviceType);
 
         // Check each template to see if it matches current parameters
         for (const [templateId, template] of Object.entries(PARAMETER_TEMPLATES)) {
             if (templateId === 'custom') continue;
 
             console.log(`\nChecking template: ${templateId}`);
+            
+            // Get device-specific template settings
+            const deviceSpecificSettings = getDeviceSpecificTemplateSettings(template.settings, device.deviceType);
+            console.log("Device-specific template settings:", deviceSpecificSettings);
+            
             let matches = true;
 
-            for (const [paramKey, templateValue] of Object.entries(template.settings)) {
+            for (const [paramKey, templateValue] of Object.entries(deviceSpecificSettings)) {
                 console.log(`  Looking for paramKey: ${paramKey}, expected value: ${templateValue}`);
 
                 // Find the parameter in device data
@@ -980,7 +1043,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
     }
 
     /**
-     * Apply template settings to parameter inputs - FIXED VERSION
+     * Apply template settings to parameter inputs - UPDATED VERSION with device-specific mapping
      */
     function applyParameterTemplate(templateId, deviceSerial, deviceType) {
         const template = PARAMETER_TEMPLATES[templateId];
@@ -1001,20 +1064,13 @@ geotab.addin.digitalMatterDeviceManager = function () {
         // Set a flag to prevent markParameterAsChanged from switching to custom
         paramsContainer.setAttribute('data-applying-template', 'true');
         
-        Object.entries(template.settings).forEach(([paramKey, paramValue]) => {
+        // Get device-specific template settings
+        const deviceSpecificSettings = getDeviceSpecificTemplateSettings(template.settings, deviceType);
+        
+        Object.entries(deviceSpecificSettings).forEach(([paramKey, paramValue]) => {
             const input = paramsContainer.querySelector(`[data-param="${paramKey}"]`);
             if (input) {
-                // Adjust tracking mode based on device type
-                if (paramKey === 'bTrackingMode' && deviceType === 'YabbyEdge') {
-                    // YabbyEdge has different tracking mode values
-                    if (paramValue === '0') {
-                        input.value = '0'; // Movement based
-                    } else if (paramValue === '1' || paramValue === '2') {
-                        input.value = '1'; // Periodic Update
-                    }
-                } else {
-                    input.value = paramValue;
-                }
+                input.value = paramValue;
                 
                 // Mark as changed if different from original, but don't switch template
                 const originalValue = input.getAttribute('data-original-value') || input.defaultValue;

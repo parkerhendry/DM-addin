@@ -557,12 +557,21 @@ geotab.addin.digitalMatterDeviceManager = function () {
             const batteryClass = getBatteryClass(device.batteryPercentage);
             const batteryIcon = getBatteryIcon(device.batteryPercentage);
             
+            // Determine recovery mode status and button text
+            const isInRecoveryMode = device.recoveryModeStatus === true;
+            const recoveryModeText = isInRecoveryMode ? 'Recovery Mode' : 'Normal Mode';
+            const recoveryModeClass = isInRecoveryMode ? 'text-danger' : 'text-success';
+            const recoveryModeIcon = isInRecoveryMode ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle';
+            
+            const recoveryButtonText = isInRecoveryMode ? 'Cancel Recovery Mode' : 'Activate Recovery Mode';
+            const recoveryButtonClass = isInRecoveryMode ? 'btn-danger' : 'btn-warning';
+            
             return `
                 <div class="device-card mb-3">
                     <div class="card">
                         <div class="card-body">
                             <div class="row align-items-center">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <h5 class="card-title mb-1">${device.geotabName || 'Unknown Device'}</h5>
                                     <p class="card-text text-muted mb-1">
                                         <small>Serial: ${device.serialNumber}</small>
@@ -571,7 +580,7 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                         <small>Geotab Serial: ${device.geotabSerial || 'N/A'}</small>
                                     </p>
                                 </div>
-                                <div class="col-md-3 text-center">
+                                <div class="col-md-2 text-center">
                                     ${device.batteryPercentage !== null ? `
                                         <div class="battery-info">
                                             <i class="fas ${batteryIcon} ${batteryClass} fa-2x"></i>
@@ -584,15 +593,21 @@ geotab.addin.digitalMatterDeviceManager = function () {
                                         </div>
                                     `}
                                 </div>
-                                <div class="col-md-3 text-end">
+                                <div class="col-md-2 text-center">
+                                    <div class="recovery-mode-status">
+                                        <i class="${recoveryModeIcon} ${recoveryModeClass}"></i>
+                                        <div class="recovery-mode-text ${recoveryModeClass} small fw-semibold">${recoveryModeText}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
                                     <button class="btn btn-primary btn-sm me-2 mb-1" 
                                             onclick="viewDeviceParameters('${device.serialNumber}')"
                                             ${!device.systemParameters ? 'disabled' : ''}>
                                         <i class="fas fa-cog me-1"></i>Parameters
                                     </button>
-                                    <button class="btn btn-warning btn-sm mb-1" 
+                                    <button class="btn ${recoveryButtonClass} btn-sm mb-1" 
                                             onclick="viewRecoveryMode('${device.serialNumber}')">
-                                        <i class="fas fa-life-ring me-1"></i>Recovery Mode
+                                        <i class="fas fa-life-ring me-1"></i>${recoveryButtonText}
                                     </button>
                                 </div>
                             </div>
@@ -1712,6 +1727,9 @@ geotab.addin.digitalMatterDeviceManager = function () {
         // Check if there are any active queues (this will disable the main action buttons)
         const hasActiveQueues = queues.length > 0;
         
+        // Determine if we should show the expiry date input (only for "Trigger Recovery Mode" button)
+        const showExpiryInput = !isInRecoveryMode && !hasActiveQueues;
+        
         let recoveryHtml = `
             <div id="recovery-${device.serialNumber}" class="recovery-mode mt-3">
                 <div class="recovery-container">
@@ -1751,18 +1769,21 @@ geotab.addin.digitalMatterDeviceManager = function () {
                     <div class="recovery-content">
                         <div class="recovery-actions mb-4">
                             <div class="row align-items-end">
-                                <div class="col-md-6">
-                                    <label for="expiryDate-${device.serialNumber}" class="form-label fw-semibold">
-                                        Expiration Date & Time (EST)
-                                    </label>
-                                    <input type="datetime-local" 
-                                        class="form-control" 
-                                        id="expiryDate-${device.serialNumber}" 
-                                        value="${defaultExpiryString}"
-                                        min="${new Date().toISOString().slice(0, 16)}"
-                                        ${isInRecoveryMode || hasActiveQueues ? 'disabled' : ''}>
-                                </div>
-                                <div class="col-md-6">
+                                ${showExpiryInput ? `
+                                    <div class="col-md-6">
+                                        <label for="expiryDate-${device.serialNumber}" class="form-label fw-semibold">
+                                            Expiration Date & Time (EST)
+                                        </label>
+                                        <input type="datetime-local" 
+                                            class="form-control" 
+                                            id="expiryDate-${device.serialNumber}" 
+                                            value="${defaultExpiryString}"
+                                            min="${new Date().toISOString().slice(0, 16)}">
+                                    </div>
+                                    <div class="col-md-6">
+                                ` : `
+                                    <div class="col-12">
+                                `}
                                     ${isInRecoveryMode ? `
                                         <button class="btn btn-danger" 
                                                 id="cancelCurrentRecoveryBtn-${device.serialNumber}"
@@ -1820,12 +1841,9 @@ geotab.addin.digitalMatterDeviceManager = function () {
             
             queues.forEach(queue => {
                 const expiryDate = formatDateTimeEST(queue.ExpiryDateUTC);
-                console.log("Original expiry date:", queue.ExpiryDateUTC, "Formatted:", expiryDate);
                 const statusBadge = getStatusBadge(queue.MessageStatus);
                 
                 // Determine what action this queue entry will perform
-                // If device is currently in recovery mode, queue entries will change it to normal mode
-                // If device is currently in normal mode, queue entries will change it to recovery mode
                 let pendingAction;
                 let actionIcon;
                 let actionClass;
